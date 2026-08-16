@@ -29,24 +29,34 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+const MAX_IMAGE_DIMENSION = 1024;
+
 async function prepareImageDataUrl(file: File): Promise<string> {
-  if (file.type !== "image/webp") {
-    return readFileAsDataUrl(file);
-  }
   const raw = await readFileAsDataUrl(file);
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      if (
+        width <= MAX_IMAGE_DIMENSION &&
+        height <= MAX_IMAGE_DIMENSION &&
+        file.type !== "image/webp"
+      ) {
+        resolve(raw);
+        return;
+      }
+      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(width, height));
       const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         reject(new Error("Unable to convert image"));
         return;
       }
-      ctx.drawImage(image, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
     };
     image.onerror = () => reject(new Error("Unable to read image"));
     image.src = raw;
@@ -128,9 +138,20 @@ export function TaskSnapApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: dataUrl }),
       });
-      if (!response.ok) {
-        throw new Error("Analysis failed");
+    if (!response.ok) {
+      let message = "Analysis failed. Please try again.";
+      try {
+        const body: unknown = await response.json();
+        const err =
+          typeof body === "object" && body !== null
+            ? (body as Record<string, unknown>).error
+            : undefined;
+        if (typeof err === "string" && err.length > 0) message = err;
+      } catch {
+        // fall back to the default message
       }
+      throw new Error(message);
+    }
       const json: unknown = await response.json();
       const extracted = parseAnalyzeResponse(json);
       const demo =
@@ -140,7 +161,12 @@ export function TaskSnapApp() {
       setTasks(extracted);
       setIsDemo(demo);
       setPhase("done");
-    } catch {
+    } catch (error) {
+      setError(
+        error instanceof Error && error.message.length > 0
+          ? error.message
+          : "Unable to analyze the screenshot",
+      );
       setPhase("error");
     }
   }

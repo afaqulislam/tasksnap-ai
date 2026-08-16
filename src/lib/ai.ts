@@ -47,6 +47,47 @@ Return exactly:
 
 const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function extractErrorMessage(body: string): string | null {
+  try {
+    const data: unknown = JSON.parse(body);
+    if (typeof data === "object" && data !== null) {
+      const message = (data as Record<string, unknown>).error as
+        | Record<string, unknown>
+        | undefined;
+      if (typeof message?.message === "string" && message.message.length > 0) {
+        return message.message;
+      }
+    }
+  } catch {
+    // ignore malformed bodies
+  }
+  return null;
+}
+
+function parseRetryAfter(response: Response, body: string): number | null {
+  const header = response.headers.get("Retry-After");
+  if (header) {
+    const seconds = Number(header);
+    if (Number.isFinite(seconds)) return seconds;
+  }
+  const match = body.match(/try again in ([\d.]+)s/i);
+  if (match) {
+    const seconds = Number(match[1]);
+    if (Number.isFinite(seconds)) return seconds;
+  }
+  return null;
+}
+
 export function isAllowedImageMime(mime: string): boolean {
   return ALLOWED_MIME.has(mime.toLowerCase());
 }
@@ -98,45 +139,66 @@ async function analyzeWithGroq(dataUrl: string): Promise<Task[]> {
 
   const model = process.env.AI_MODEL?.trim() || "qwen/qwen3.6-27b";
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      max_tokens: 1200,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
+  async function call(attempt: number): Promise<Task[]> {
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0,
+          max_tokens: 800,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
             {
-              type: "image_url",
-              image_url: { url: dataUrl },
-            },
-            {
-              type: "text",
-              text: "Extract the actionable tasks from this screenshot. Return JSON only.",
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: { url: dataUrl },
+                },
+                {
+                  type: "text",
+                  text: "Extract the actionable tasks from this screenshot. Return JSON only.",
+                },
+              ],
             },
           ],
-        },
-      ],
-    }),
-  });
+        }),
+      },
+    );
 
-  if (!response.ok) {
-    const bodyText = await response.text().catch(() => "");
-    console.error(`Groq API ${response.status}: ${bodyText.slice(0, 500)}`);
-    throw new Error(`AI provider returned ${response.status}`);
+    if (response.status === 429 && attempt < 2) {
+      const bodyText = await response.text().catch(() => "");
+      const retryAfter = parseRetryAfter(response, bodyText);
+      if (retryAfter !== null && retryAfter <= 5) {
+        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        return call(attempt + 1);
+      }
+      throw new ApiError(
+        extractErrorMessage(bodyText) ??
+          "AI is rate-limited. Wait a moment and try again.",
+        429,
+      );
+    }
+
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => "");
+      console.error(`Groq API ${response.status}: ${bodyText.slice(0, 500)}`);
+      throw new Error(`AI provider returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    return parseAnalyzeResponse(extractJson(content));
   }
 
-  const data = await response.json();
-  const content: string = data?.choices?.[0]?.message?.content ?? "";
-  return parseAnalyzeResponse(extractJson(content));
+  return call(1);
 }
 
 async function analyzeWithGemini(dataUrl: string): Promise<Task[]> {

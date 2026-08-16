@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
-import { demoTasks, extractTasksFromImage, hasAiConfiguration, isAllowedImageMime, isDemoMode } from "@/lib/ai";
+import {
+  ApiError,
+  demoTasks,
+  extractTasksFromImage,
+  hasAiConfiguration,
+  isAllowedImageMime,
+  isDemoMode,
+} from "@/lib/ai";
 import type { AnalyzeResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -62,6 +70,9 @@ export async function POST(request: Request) {
     const response: AnalyzeResponse = { tasks, demo: useDemo };
     return NextResponse.json(response);
   } catch (error) {
+    if (error instanceof ApiError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Analyze failed:", error);
     return NextResponse.json(
       { error: "Unable to analyze the screenshot" },

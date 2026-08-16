@@ -70,7 +70,7 @@ export function UploadZone({
           <h2 className="text-lg font-semibold">
             We couldn&apos;t analyze this screenshot.
           </h2>
-          <p className="mt-2 text-sm text-muted">Please try again.</p>
+          <p className="mt-2 text-sm text-muted">{error ?? "Please try again."}</p>
           <motion.button
             type="button"
             onClick={onRetry}
