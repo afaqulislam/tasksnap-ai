@@ -130,7 +130,7 @@ export function UploadZone({
                 type="button"
                 onClick={onSubmit}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-on-primary transition hover:bg-primary-strong"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-on-primary transition hover:bg-primary-strong sm:w-auto sm:flex-1"
               >
                 <Sparkles className="size-4" aria-hidden />
                 Extract Tasks
