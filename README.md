@@ -39,11 +39,12 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 | --- | --- |
 | 📸 Screenshot upload | Drag-and-drop or click to browse. PNG, JPG, JPEG, or WEBP — up to 8 MB. |
 | 🧠 AI extraction | Reads the image and extracts tasks, deadlines, priorities, and assignees. |
+| ⚡ Smart optimization | Images are auto-resized (max 1024px) before analysis — faster and kinder to AI rate limits. |
 | 🎯 Urgency Radar | Instantly highlights the highest-priority task that needs your attention. |
 | 💡 What should I do now? | Recommends the next task to start, so you're never guessing. |
 | ✅ Task tracking | Mark tasks complete, undo mistakes, and watch your progress bar fill up. |
 | 🖼️ Preview + Reselect | Review your screenshot, rescan it, or pick a different image before extracting. |
-| 🔄 Error recovery | Clear error states and one-click retry when an analysis fails. |
+| 🔄 Error recovery | Clear error states, automatic rate-limit retries, and one-click retry. |
 | 🧘 Reduced motion | Respects your OS motion preferences for accessibility. |
 
 ## 🚀 How It Works
@@ -149,6 +150,8 @@ curl -X POST https://<your-domain>/api/analyze \
   -H "Content-Type: application/json" \
   -d '{"image": "data:image/png;base64,..."}'
 ```
+
+> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Groq's free tier is rate-limited (e.g. 8000 TPM) — if you hit it, the API retries automatically once (for short waits) and otherwise returns `429` with a message telling you when to retry.
 
 **Response:**
 
