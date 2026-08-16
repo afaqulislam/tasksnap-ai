@@ -139,6 +139,32 @@ async function analyzeWithGroq(dataUrl: string): Promise<Task[]> {
 
   const model = process.env.AI_MODEL?.trim() || "qwen/qwen3.6-27b";
 
+  const body: Record<string, unknown> = {
+    model,
+    temperature: 0,
+    max_tokens: 1200,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: { url: dataUrl },
+          },
+          {
+            type: "text",
+            text: "Extract the actionable tasks from this screenshot. Return JSON only.",
+          },
+        ],
+      },
+    ],
+  };
+  if (model.toLowerCase().includes("qwen")) {
+    body.reasoning_effort = "none";
+  }
+
   async function call(attempt: number): Promise<Task[]> {
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -148,28 +174,7 @@ async function analyzeWithGroq(dataUrl: string): Promise<Task[]> {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model,
-          temperature: 0,
-          max_tokens: 800,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url: { url: dataUrl },
-                },
-                {
-                  type: "text",
-                  text: "Extract the actionable tasks from this screenshot. Return JSON only.",
-                },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify(body),
       },
     );
 

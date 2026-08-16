@@ -71,9 +71,9 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 ### Code distribution
 
 ```
-tsx ██████████████░░░░░░  TypeScript + JSX  72%
-ts  ████░░░░░░░░░░░░░░░░  TypeScript        21%
-css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     7%
+tsx ██████████████░░░░░░  TypeScript + JSX  69%
+ts  █████░░░░░░░░░░░░░░░  TypeScript        24%
+css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     6%
 svg ░░░░░░░░░░░░░░░░░░░░  Icons             <1%
 ```
 

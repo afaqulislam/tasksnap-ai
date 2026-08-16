@@ -56,7 +56,7 @@ async function prepareImageDataUrl(file: File): Promise<string> {
         return;
       }
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.85));
+      resolve(canvas.toDataURL("image/png"));
     };
     image.onerror = () => reject(new Error("Unable to read image"));
     image.src = raw;
