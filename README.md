@@ -223,7 +223,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 <div align="center">
 
-<a href="https://www.linkedin.com/in/afaqulislam"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230A66C2'%3E%3Cpath d='M20.447%2020.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853%200-2.136%201.445-2.136%202.939v5.667H9.351V9h3.414v1.561h.046c.477-.9%201.637-1.85%203.37-1.85%203.601%200%204.267%202.37%204.267%205.455v6.286zM5.337%207.433c-1.144%200-2.063-.926-2.063-2.065%200-1.138.92-2.063%202.063-2.063%201.14%200%202.064.925%202.064%202.063%200%201.139-.925%202.065-2.064%202.065zm1.782%2013.019H3.555V9h3.564v11.452zM22.225%200H1.771C.792%200%200%20.774%200%201.729v20.542C0%2023.227.792%2024%201.771%2024h20.451C23.2%2024%2024%2023.227%2024%2022.271V1.729C24%20.774%2023.2%200%2022.225%200z'/%3E%3C/svg%3E" height="18" alt="LinkedIn" /></a>&nbsp;&nbsp; <a href="https://x.com/afaqulislam708"><img src="https://cdn.simpleicons.org/x/000000" height="18" alt="X" /></a>&nbsp;&nbsp; <a href="https://github.com/afaqulislam"><img src="https://cdn.simpleicons.org/github/181717" height="18" alt="GitHub" /></a>
+[![GitHub](https://img.shields.io/badge/GitHub-afaqulislam-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/afaqulislam) [![LinkedIn](https://img.shields.io/badge/LinkedIn-afaqulislam-0A66C2?logo=linkedin&logoColor=white&style=for-the-badge)](https://www.linkedin.com/in/afaqulislam) [![X](https://img.shields.io/badge/X-%40afaqulislam708-000000?logo=x&logoColor=white&style=for-the-badge)](https://x.com/afaqulislam708)
 
 Built with ☕ for **Chai aur Code**
 
