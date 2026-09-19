@@ -137,7 +137,7 @@ async function analyzeWithGroq(dataUrl: string): Promise<Task[]> {
   const apiKey = getGroqKey();
   if (!apiKey) throw new Error("Missing Groq API key");
 
-  const model = process.env.AI_MODEL?.trim() || "qwen/qwen3.6-27b";
+  const model = process.env.AI_MODEL?.trim() || "qwen/qwen3.8-27b";
 
   const body: Record<string, unknown> = {
     model,
