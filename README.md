@@ -117,7 +117,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Variable | Required | Description |
 | --- | --- | --- |
 | `GROQ_API_KEY` | Yes* | Your [Groq](https://console.groq.com/keys) API key for real analysis. |
-| `AI_MODEL` | No | Model override. Default: `qwen/qwen3.6-27b`. |
+| `AI_MODEL` | No | Model override. Default: `qwen/qwen3.8-27b`. |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | No | Gemini key — used only if `GROQ_API_KEY` is not set. |
 | `DEMO_MODE` | No | `true` returns sample results when no AI key is configured. Keep `false` in production. |
 
