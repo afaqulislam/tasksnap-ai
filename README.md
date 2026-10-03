@@ -38,8 +38,11 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 | Feature | What it does |
 | --- | --- |
 | 📸 Screenshot upload | Drag-and-drop or click to browse. PNG, JPG, JPEG, or WEBP — up to 8 MB. |
-| 🧠 AI extraction | Reads the image and extracts tasks, deadlines, priorities, and assignees. |
-| ⚡ Smart optimization | Images are auto-resized (max 1024px) before analysis — faster and kinder to AI rate limits. |
+| 🔎 In-browser OCR | Text is read locally with [Tesseract.js](https://github.com/naptha/tesseract.js) — private and zero API tokens. |
+| 🧠 AI extraction | Turns the extracted text into tasks, deadlines, priorities, and assignees (image sent directly as a fallback). |
+| ⚡ Smart optimization | Images are auto-resized (max 1024px) and only text reaches the AI — fast and token-friendly. |
+| 🔒 Private by default | Screenshots aren't uploaded for reading; only extracted text is sent to the AI provider. |
+| 🚦 Fair usage limits | Per-device/IP rate limiting keeps the free AI tier usable for everyone. |
 | 🎯 Urgency Radar | Instantly highlights the highest-priority task that needs your attention. |
 | 💡 What should I do now? | Recommends the next task to start, so you're never guessing. |
 | ✅ Task tracking | Mark tasks complete, undo mistakes, and watch your progress bar fill up. |
@@ -51,8 +54,8 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 
 ```text
 1. Upload    →  Drop a screenshot (drag-and-drop or click)
-2. Review    →  Preview the image, reselect if needed
-3. Extract   →  AI reads tasks, deadlines, priorities, and assignees
+2. Read      →  OCR extracts the text locally in your browser
+3. Extract   →  AI turns the text into tasks, deadlines, and priorities
 4. Complete  →  Work through the list — progress tracks itself
 ```
 
@@ -64,16 +67,17 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 | Framework | <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="14" alt="Next.js" /> [Next.js 16](https://nextjs.org) — App Router, Turbopack, React Compiler |
 | UI | <img src="https://cdn.simpleicons.org/react/61DAFB" height="14" alt="React" /> React 19, <img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" height="14" alt="Tailwind CSS" /> [Tailwind CSS v4](https://tailwindcss.com), <img src="https://cdn.simpleicons.org/lucide/B5F2FF" height="14" alt="Lucide" /> Lucide icons, <img src="https://cdn.simpleicons.org/googlefonts/4285F4" height="14" alt="Inter" /> Inter |
 | Motion | <img src="https://cdn.simpleicons.org/framer/0055FF" height="14" alt="Framer Motion" /> [Framer Motion](https://www.framer.com/motion/) — with reduced-motion support |
-| AI — primary | ⚡ [Groq](https://console.groq.com) — vision model with JSON mode |
+| AI — primary | ⚡ [Groq](https://console.groq.com) — text-first with JSON mode, vision fallback |
+| OCR | [Tesseract.js](https://github.com/naptha/tesseract.js) — runs in the browser, zero API tokens |
 | AI — fallback | <img src="https://cdn.simpleicons.org/googlegemini/8E75B2" height="14" alt="Google Gemini" /> Google Gemini — used automatically when no Groq key is set |
 | Demo fallback | Built-in sample results when no AI key is configured |
 
 ### Code distribution
 
 ```
-tsx ██████████████░░░░░░  TypeScript + JSX  69%
-ts  █████░░░░░░░░░░░░░░░  TypeScript        24%
-css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     6%
+tsx █████████████░░░░░░░  TypeScript + JSX  68%
+ts  ██████░░░░░░░░░░░░░░  TypeScript        27%
+css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     5%
 svg ░░░░░░░░░░░░░░░░░░░░  Icons             <1%
 ```
 
@@ -139,22 +143,28 @@ src/
 │   ├── layout.tsx            # Metadata, fonts, theme
 │   └── page.tsx              # Entry page
 ├── components/               # Navbar, Hero, UploadZone, TaskCard, ...
-└── lib/                      # AI providers, validation, config, types
+└── lib/                      # AI providers, OCR, rate limiting, validation, types
 ```
 
 ## 🧪 API Reference
 
 ### `POST /api/analyze`
 
-Extracts tasks from a base64-encoded screenshot.
+Extracts tasks from screenshot content. Send `text` (OCR output extracted on the client) and/or `image` (base64 data URL — used directly when OCR finds nothing useful).
 
 ```bash
+# Text-first (OCR output from the browser)
+curl -X POST https://<your-domain>/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Submit the math assignment by Friday."}'
+
+# Image fallback (analyzed directly by the AI)
 curl -X POST https://<your-domain>/api/analyze \
   -H "Content-Type: application/json" \
   -d '{"image": "data:image/png;base64,..."}'
 ```
 
-> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Groq's free tier is rate-limited (e.g. 8000 TPM) — if you hit it, the API retries automatically once (for short waits) and otherwise returns `429` with a message telling you when to retry.
+> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Requests are throttled per device/IP — 10 per 10 minutes on a sliding window — and return `429` with a `Retry-After` header when exceeded. Groq's own free tier is also rate-limited (e.g. 8000 TPM); the API retries automatically once for short waits and otherwise surfaces a `429` with a readable message.
 
 **Response:**
 
