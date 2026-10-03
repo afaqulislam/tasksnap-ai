@@ -38,7 +38,9 @@ export function Footer() {
             TaskSnap<span className="text-primary"> AI</span>
           </span>
         </p>
-        <p className="text-sm text-muted">Built for Chai aur Code</p>
+        <p className="text-sm text-muted">
+          Built for Chai aur Code · Free &amp; open source (MIT)
+        </p>
         <div className="flex items-center gap-3">
           {SOCIAL_LINKS.map(({ label, href, Icon }) => (
             <a

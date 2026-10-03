@@ -4,7 +4,19 @@ import { useRef, useState, type DragEvent } from "react";
 import { motion } from "framer-motion";
 import { Camera, ImagePlus, RefreshCw, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ALLOWED_IMAGE_MIME, MAX_IMAGE_MB } from "@/lib/config";
 import type { Phase } from "@/lib/types";
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <p
+      role="alert"
+      className="mb-3 animate-fade-in rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-center text-sm text-danger"
+    >
+      {message}
+    </p>
+  );
+}
 
 interface UploadZoneProps {
   phase: Phase;
@@ -48,7 +60,7 @@ export function UploadZone({
       <input
         ref={inputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept={ALLOWED_IMAGE_MIME.join(",")}
         className="sr-only"
         aria-label="Upload a screenshot"
         onChange={(event) => {
@@ -88,14 +100,7 @@ export function UploadZone({
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="mx-auto w-full max-w-2xl"
         >
-          {error ? (
-            <p
-              role="alert"
-              className="mb-3 animate-fade-in rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-center text-sm text-danger"
-            >
-              {error}
-            </p>
-          ) : null}
+          {error ? <ErrorBanner message={error} /> : null}
           <div className="rounded-2xl border border-edge bg-card p-4 sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="inline-flex items-center gap-2 text-sm font-medium text-success">
@@ -149,14 +154,7 @@ export function UploadZone({
         </motion.div>
       ) : (
         <div className="mx-auto w-full max-w-2xl">
-          {error ? (
-            <p
-              role="alert"
-              className="mb-3 animate-fade-in rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-center text-sm text-danger"
-            >
-              {error}
-            </p>
-          ) : null}
+          {error ? <ErrorBanner message={error} /> : null}
           <motion.button
             type="button"
             onClick={openPicker}
@@ -198,7 +196,7 @@ export function UploadZone({
             <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs text-muted">
               PNG, JPG, JPEG or WEBP
               <span className="size-1 rounded-full bg-primary" aria-hidden />
-              up to 8MB
+              up to {MAX_IMAGE_MB} MB
             </span>
           </motion.button>
         </div>

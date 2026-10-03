@@ -1,10 +1,33 @@
-import type { Task } from "./types";
+import type { Priority, Task } from "./types";
 
-const PRIORITY_ORDER: Record<Task["priority"], number> = {
+const PRIORITY_ORDER: Record<Priority, number> = {
   high: 0,
   medium: 1,
   low: 2,
 };
+
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  high: "High priority",
+  medium: "Medium priority",
+  low: "Low priority",
+};
+
+const PRIORITY_TEXT: Record<Priority, string> = {
+  high: "text-danger",
+  medium: "text-warning",
+  low: "text-muted",
+};
+
+export function priorityTextClass(priority: Priority): string {
+  return PRIORITY_TEXT[priority];
+}
+
+export function getActiveTasks(
+  tasks: Task[],
+  completed: Set<number>,
+): Task[] {
+  return tasks.filter((_, index) => !completed.has(index));
+}
 
 function deadlineTimestamp(deadline: string | null): number | null {
   if (!deadline) return null;

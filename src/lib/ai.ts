@@ -1,3 +1,4 @@
+import { ALLOWED_IMAGE_MIME } from "./config";
 import type { Task } from "./types";
 import { parseAnalyzeResponse } from "./validate";
 
@@ -90,7 +91,7 @@ Return exactly:
   ]
 }`;
 
-const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
+const ALLOWED_MIME = new Set<string>(ALLOWED_IMAGE_MIME);
 
 const MAX_OUTPUT_TOKENS = 1400;
 const REQUEST_TIMEOUT_MS = 40_000;
@@ -383,7 +384,7 @@ async function analyzeWithGemini(dataUrl: string): Promise<Task[]> {
   return call(1);
 }
 
-export interface AnalyzeInput {
+interface AnalyzeInput {
   text?: string;
   image?: string;
 }

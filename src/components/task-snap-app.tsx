@@ -17,10 +17,12 @@ import { Features } from "./features";
 import { Faq } from "./faq";
 import { Footer } from "./footer";
 import { parseAnalyzeResponse } from "@/lib/validate";
+import {
+  ALLOWED_IMAGE_MIME,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_DIMENSION,
+} from "@/lib/config";
 import type { Phase, Task } from "@/lib/types";
-
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -31,8 +33,6 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-
-const MAX_IMAGE_DIMENSION = 1024;
 
 const OCR_TIMEOUT_MS = 45_000;
 
@@ -110,7 +110,7 @@ export function TaskSnapApp() {
   }
 
   function handleFileSelected(selected: File) {
-    if (!ALLOWED_TYPES.includes(selected.type)) {
+    if (!ALLOWED_IMAGE_MIME.includes(selected.type as (typeof ALLOWED_IMAGE_MIME)[number])) {
       setError("Please upload an image file.");
       return;
     }
@@ -247,19 +247,9 @@ export function TaskSnapApp() {
         <div ref={uploadRef} className="scroll-mt-20 px-4 sm:px-6">
           {phase === "idle" ? <EmptyState /> : null}
 
-          {phase === "idle" || phase === "selected" ? (
-            <UploadZone
-              phase={phase}
-              previewUrl={previewUrl}
-              error={error}
-              onFileSelected={handleFileSelected}
-              onRemove={handleRemove}
-              onSubmit={handleSubmit}
-              onRetry={handleRetry}
-            />
-          ) : null}
-
-          {phase === "error" ? (
+          {phase === "idle" ||
+          phase === "selected" ||
+          phase === "error" ? (
             <UploadZone
               phase={phase}
               previewUrl={previewUrl}

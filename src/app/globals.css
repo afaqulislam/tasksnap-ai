@@ -10,8 +10,6 @@
   --primary: #2dd4bf;
   --primary-strong: #14b8a6;
   --on-primary: #052e2b;
-  --accent: #fb923c;
-  --on-accent: #1c0a00;
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
@@ -28,12 +26,9 @@
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);
   --color-on-primary: var(--on-primary);
-  --color-accent: var(--accent);
-  --color-on-accent: var(--on-accent);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
-  --color-ring: var(--ring);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --animate-fade-in: fade-in 0.4s ease-out both;
   --animate-radar-sweep: radar-sweep 2.4s ease-out infinite;
@@ -91,10 +86,6 @@
     left: 100%;
     width: 35%;
   }
-}
-
-html {
-  color-scheme: dark;
 }
 
 body {

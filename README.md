@@ -10,9 +10,11 @@ No typing. No copy-pasting. No missed assignments.
 **Built with:**
 
 <img src="https://cdn.simpleicons.org/typescript/3178C6" height="16" alt="TypeScript" /> TypeScript &nbsp;·&nbsp; <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="16" alt="Next.js" /> Next.js 16 &nbsp;·&nbsp; <img src="https://cdn.simpleicons.org/react/61DAFB" height="16" alt="React" /> React 19 &nbsp;·&nbsp; <img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" height="16" alt="Tailwind CSS" /> Tailwind CSS v4 &nbsp;·&nbsp;
-<img src="https://cdn.simpleicons.org/framer/0055FF" height="16" alt="Framer Motion" /> Framer Motion &nbsp;·&nbsp; ⚡ Groq AI
+<img src="https://cdn.simpleicons.org/framer/0055FF" height="16" alt="Framer Motion" /> Framer Motion &nbsp;·&nbsp; 🔤 Tesseract.js &nbsp;·&nbsp; ⚡ Groq AI
 
-[About](#-about) · [Built for Chai aur Code](#-built-for-chai-aur-code) · [Features](#-features) · [How It Works](#-how-it-works) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [Deployment](#-deployment) · [Contributing](#-contributing) · [License](#-license)
+[![CI](https://github.com/afaqulislam/tasksnap-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/afaqulislam/tasksnap-ai/actions/workflows/ci.yml) [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org) [![License: MIT](https://img.shields.io/badge/License-MIT-teal?style=flat-square)](LICENSE)
+
+[About](#-about) · [Built for Chai aur Code](#-built-for-chai-aur-code) · [Features](#-features) · [How It Works](#-how-it-works) · [Reliability](#-reliability) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [Deployment](#-deployment) · [Contributing](#-contributing) · [License](#-license)
 
 </div>
 
@@ -38,16 +40,16 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 | Feature | What it does |
 | --- | --- |
 | 📸 Screenshot upload | Drag-and-drop or click to browse. PNG, JPG, JPEG, or WEBP — up to 8 MB. |
-| 🔎 In-browser OCR | Text is read locally with [Tesseract.js](https://github.com/naptha/tesseract.js) — private and zero API tokens. |
+| 🔎 In-browser OCR | Text is read locally with [Tesseract.js](https://github.com/naptha/tesseract.js) — private and zero API tokens. Any language Tesseract supports (`NEXT_PUBLIC_OCR_LANGS`). |
 | 🧠 AI extraction | Turns the extracted text into tasks, deadlines, priorities, and assignees (image sent directly as a fallback). |
 | ⚡ Smart optimization | Images are auto-resized (max 1024px) and only text reaches the AI — fast and token-friendly. |
-| 🔒 Private by default | Screenshots aren't uploaded for reading; only extracted text is sent to the AI provider. |
+| 🔒 Private by default | Screenshots aren't uploaded for reading; only extracted text is sent to the AI provider. Nothing is stored. |
 | 🚦 Fair usage limits | Per-device/IP rate limiting keeps the free AI tier usable for everyone. |
-| 🎯 Urgency Radar | Instantly highlights the highest-priority task that needs your attention. |
+| 🎯 Urgency Radar | Highlights the highest-priority task — earliest deadline wins within a priority. |
 | 💡 What should I do now? | Recommends the next task to start, so you're never guessing. |
 | ✅ Task tracking | Mark tasks complete, undo mistakes, and watch your progress bar fill up. |
 | 🖼️ Preview + Reselect | Review your screenshot, rescan it, or pick a different image before extracting. |
-| 🔄 Error recovery | Clear error states, automatic rate-limit retries, and one-click retry. |
+| 🔄 Error recovery | Clear error states, request timeouts, provider fallback, and one-click retry. |
 | 🧘 Reduced motion | Respects your OS motion preferences for accessibility. |
 
 ## 🚀 How It Works
@@ -59,6 +61,22 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 4. Complete  →  Work through the list — progress tracks itself
 ```
 
+## 🛡️ Reliability
+
+The interesting part of this project isn't the extraction — it's everything that happens when a third party misbehaves. Free-tier AI providers rate-limit, OCR sometimes reads garbage, and users double-click.
+
+| Risk | How it's handled |
+| --- | --- |
+| AI provider outage or rate limit | Automatic fallback chain — Groq → Gemini — plus one retry for short `Retry-After` waits. |
+| Hanging requests | Every provider call has a 40s timeout and returns a readable message instead of spinning forever. |
+| Garbled OCR output | Text under 40 characters or under 30% readable characters is discarded and the image path is used instead. |
+| Truncated AI responses | `max_tokens` is capped and `finish_reason: "length"` responses are treated as "no tasks" so the fallback path runs. |
+| Double submits | The client guards concurrent analysis, so one click can't burn two API calls. |
+| Slow first OCR load | OCR has a 45s budget, then the image fallback takes over. |
+| Malformed or oversized uploads | Empty files, unsupported types, invalid data URLs, and >8 MB payloads are rejected with a `4xx` before any AI call. |
+| Abuse and spam | Sliding-window rate limiting per validated IP (10 requests / 10 minutes), skipped entirely for demo responses. |
+| Provider errors in the UI | Meaningful, non-technical error messages instead of raw provider payloads. |
+
 ## 🧰 Tech Stack
 
 | Category | Technology |
@@ -69,15 +87,16 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 | Motion | <img src="https://cdn.simpleicons.org/framer/0055FF" height="14" alt="Framer Motion" /> [Framer Motion](https://www.framer.com/motion/) — with reduced-motion support |
 | AI — primary | ⚡ [Groq](https://console.groq.com) — text-first with JSON mode, vision fallback |
 | OCR | [Tesseract.js](https://github.com/naptha/tesseract.js) — runs in the browser, zero API tokens |
-| AI — fallback | <img src="https://cdn.simpleicons.org/googlegemini/8E75B2" height="14" alt="Google Gemini" /> Google Gemini — used automatically when no Groq key is set |
+| AI — fallback | <img src="https://cdn.simpleicons.org/googlegemini/8E75B2" height="14" alt="Google Gemini" /> Google Gemini — used automatically when Groq is missing or errors |
 | Demo fallback | Built-in sample results when no AI key is configured |
+| Quality | GitHub Actions CI — ESLint, `tsc --noEmit`, and `next build` on every push |
 
 ### Code distribution
 
 ```
-tsx █████████████░░░░░░░  TypeScript + JSX  68%
-ts  ██████░░░░░░░░░░░░░░  TypeScript        27%
-css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     5%
+tsx █████████████░░░░░░░  TypeScript + JSX  69%
+ts  ██████░░░░░░░░░░░░░░  TypeScript        28%
+css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     3%
 svg ░░░░░░░░░░░░░░░░░░░░  Icons             <1%
 ```
 
@@ -115,14 +134,15 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run build` | Create a production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript without emitting files |
 
 ## 🔑 Environment Variables
 
 | Variable | Required | Description |
 | --- | --- | --- |
 | `GROQ_API_KEY` | Yes* | Your [Groq](https://console.groq.com/keys) API key for real analysis. |
-| `AI_MODEL` | No | Model override. Default: `qwen/qwen3.8-27b`. |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | No | Gemini key — used only if `GROQ_API_KEY` is not set. |
+| `AI_MODEL` | No | Model override for whichever provider is used. Groq default: `qwen/qwen3.8-27b`. Gemini default: `gemini-2.0-flash`. |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | No | Gemini key — used when `GROQ_API_KEY` is missing **or** when Groq returns an error. |
 | `DEMO_MODE` | No | `true` returns sample results when no AI key is configured. Keep `false` in production. |
 | `NEXT_PUBLIC_OCR_LANGS` | No | Tesseract language codes for in-browser OCR, comma-separated. Default: `eng`. Add any languages, e.g. `eng,urd,ara`. |
 
@@ -133,17 +153,25 @@ Open [http://localhost:3000](http://localhost:3000).
 ## 📁 Project Structure
 
 ```text
+.github/workflows/ci.yml         # Lint + typecheck + build on every push
 src/
 ├── app/
 │   ├── api/
-│   │   ├── analyze/          # POST — screenshot → AI → tasks
+│   │   ├── analyze/          # POST — screenshot/text → AI → tasks
 │   │   └── github-stars/     # GET — cached GitHub star count
 │   ├── globals.css           # Design tokens, animations, reduced-motion
 │   ├── icon.svg              # Custom favicon
 │   ├── layout.tsx            # Metadata, fonts, theme
 │   └── page.tsx              # Entry page
 ├── components/               # Navbar, Hero, UploadZone, TaskCard, ...
-└── lib/                      # AI providers, OCR, rate limiting, validation, types
+└── lib/
+    ├── ai.ts                 # Groq + Gemini providers, prompts, fallback chain
+    ├── config.ts             # Repo links, upload limits, shared constants
+    ├── ocr.ts                # Tesseract worker, OCR sanity check
+    ├── priority.ts           # Urgency ranking, deadline ordering
+    ├── rate-limit.ts         # Sliding-window per-IP limiter
+    ├── validate.ts           # Task response parsing & sanitising
+    └── types.ts              # Shared types
 ```
 
 ## 🧪 API Reference
@@ -164,7 +192,16 @@ curl -X POST https://<your-domain>/api/analyze \
   -d '{"image": "data:image/png;base64,..."}'
 ```
 
-> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Requests are throttled per device/IP — 10 per 10 minutes on a sliding window — and return `429` with a `Retry-After` header when exceeded. Groq's own free tier is also rate-limited (e.g. 8000 TPM); the API retries automatically once for short waits and otherwise surfaces a `429` with a readable message.
+> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Requests are throttled per device/IP — 10 per 10 minutes on a sliding window — and return `429` with a `Retry-After` header when exceeded. Groq's own free tier is also rate-limited (e.g. 8000 TPM); the API retries automatically once for short waits, falls back to Gemini when its key is configured, and otherwise surfaces a readable `429` message.
+
+**Status codes:**
+
+| Status | When |
+| --- | --- |
+| `200` | Success — `tasks` array (possibly empty) plus a `demo` flag. |
+| `400` | Invalid JSON, no `text`/`image`, unsupported image type, or an image over 8 MB. Rejected before any AI call. |
+| `429` | Per-IP limit reached (`Retry-After` header included) or the AI provider is rate-limited. |
+| `500` | Provider failure or timeout after all fallbacks were attempted. |
 
 **Response:**
 
@@ -193,7 +230,7 @@ curl -X POST https://<your-domain>/api/analyze \
 
 ### `GET /api/github-stars`
 
-Returns the repository's current star count (cached for 1 hour to avoid rate limits).
+Returns the repository's current star count (cached for 1 hour to avoid rate limits). Returns `{ "stars": null }` with a `200` if GitHub is unreachable, so a flaky API never breaks the page.
 
 ```json
 { "stars": 0 }
@@ -207,20 +244,26 @@ Returns the repository's current star count (cached for 1 hour to avoid rate lim
 2. Import it at [vercel.com/new](https://vercel.com/new) — Vercel auto-detects Next.js.
 3. Add environment variables under **Project → Settings → Environment Variables**:
    - `GROQ_API_KEY` — your Groq key
+   - `GOOGLE_GENERATIVE_AI_API_KEY` — optional Gemini backup provider
+   - `NEXT_PUBLIC_OCR_LANGS` — optional, e.g. `eng,urd`
    - `DEMO_MODE` — `false`
 4. Deploy. Done.
+
+> Note: `NEXT_PUBLIC_*` variables are inlined at build time — change them and redeploy.
 
 ## 🤝 Contributing
 
 Contributions are welcome! Here's how to get started:
 
-1. **Fork** the repository and create your branch from `master`.
+1. **Fork** the repository and create your branch from `main`.
 2. **Set up** the project locally (see [Getting Started](#-getting-started)).
 3. **Make your changes** — keep code style consistent and run the checks:
    ```bash
    npm run lint
+   npm run typecheck
    npm run build
    ```
+   CI runs the same three checks on every pull request.
 4. **Open a Pull Request** with a clear description of what you changed and why.
 
 Guidelines:

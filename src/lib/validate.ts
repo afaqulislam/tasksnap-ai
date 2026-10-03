@@ -2,20 +2,20 @@ import type { Priority, Task } from "./types";
 
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
 
-export function isPriority(value: unknown): value is Priority {
+function isPriority(value: unknown): value is Priority {
   return typeof value === "string" && PRIORITIES.includes(value as Priority);
 }
 
-export function cleanText(value: unknown): string {
+function cleanText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function cleanOptionalText(value: unknown): string | null {
+function cleanOptionalText(value: unknown): string | null {
   const text = cleanText(value);
   return text.length > 0 ? text : null;
 }
 
-export function parseTask(raw: unknown): Task | null {
+function parseTask(raw: unknown): Task | null {
   if (typeof raw !== "object" || raw === null) return null;
 
   const record = raw as Record<string, unknown>;

@@ -6,6 +6,12 @@ import { Sparkles, Star } from "lucide-react";
 import { GithubIcon } from "./brand-icons";
 import { GITHUB_URL } from "@/lib/config";
 
+const NAV_LINKS = [
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#features", label: "Features" },
+  { href: "#faq", label: "FAQ" },
+];
+
 export function Navbar() {
   const [stars, setStars] = useState<number | null>(null);
 
@@ -43,6 +49,17 @@ export function Navbar() {
             TaskSnap<span className="text-primary"> AI</span>
           </span>
         </a>
+        <nav className="hidden items-center gap-1 md:flex">
+          {NAV_LINKS.map(({ href, label }) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-card hover:text-foreground"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
         <div className="flex items-center gap-2.5 sm:gap-3">
           <a
             href={GITHUB_URL}
@@ -59,9 +76,9 @@ export function Navbar() {
               </span>
             ) : null}
           </a>
-          <span className="hidden items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs text-muted sm:inline-flex">
+          <span className="hidden items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs text-muted lg:inline-flex">
             <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-            AI-powered
+            OCR + AI, no signup
           </span>
         </div>
       </nav>

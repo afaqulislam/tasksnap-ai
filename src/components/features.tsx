@@ -1,41 +1,42 @@
 import { Brain, CalendarClock, ImagePlus, ScanText, ShieldCheck, Target } from "lucide-react";
+import { MAX_IMAGE_MB } from "@/lib/config";
 
 const FEATURES = [
   {
     Icon: ImagePlus,
     title: "Screenshot upload",
-    text: "Drag-and-drop or browse for images — PNG, JPG, JPEG, or WEBP, up to 8 MB.",
+    text: `Drag-and-drop or browse for images — PNG, JPG, JPEG, or WEBP, up to ${MAX_IMAGE_MB} MB.`,
   },
   {
     Icon: ScanText,
     title: "In-browser OCR",
-    text: "Text is extracted on your device first — private, free, and zero API tokens spent.",
+    text: "Text is read on your device first — private, free, multi-language, and zero API tokens spent.",
   },
   {
     Icon: Brain,
     title: "AI task detection",
-    text: "The AI works from clean extracted text — fewer tokens, sharper results.",
+    text: "Works from clean extracted text and falls back to the image itself — fewer tokens, sharper results.",
   },
   {
     Icon: CalendarClock,
     title: "Smart deadlines",
-    text: "Due dates are picked up only when they're explicit in the screenshot.",
+    text: "Due dates are picked up only when explicit, and the earliest deadline is ranked first.",
   },
   {
     Icon: Target,
     title: "Priority radar",
-    text: "See at a glance which tasks need attention first.",
+    text: "High priority wins, then the nearest deadline — so you always see what needs attention first.",
   },
   {
     Icon: ShieldCheck,
     title: "Private & fair",
-    text: "Reading stays on your device, and per-user limits keep the AI queue fair.",
+    text: "Reading stays on your device, and per-device limits keep the shared AI queue fair for everyone.",
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="mx-auto w-full max-w-5xl px-4 pb-14 sm:px-6 sm:pb-16">
+    <section id="features" className="mx-auto w-full max-w-5xl px-4 pb-14 sm:px-6 sm:pb-16 scroll-mt-20">
       <div className="flex flex-col items-center text-center">
         <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-xs font-medium text-muted">
           <ShieldCheck className="size-3.5 text-primary" aria-hidden />
@@ -45,7 +46,8 @@ export function Features() {
           Everything you need to stay on track.
         </h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
-          Purpose-built for group chats, announcements, and last-minute deadlines.
+          Purpose-built for group chats, announcements, and last-minute deadlines
+          — and built to fail gracefully when OCR or the AI hiccups.
         </p>
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

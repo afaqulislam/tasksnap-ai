@@ -1,7 +1,13 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Zap } from "lucide-react";
+import { cn } from "@/lib/cn";
 import type { Task } from "@/lib/types";
-import { pickTopTask } from "@/lib/priority";
+import {
+  PRIORITY_LABELS,
+  getActiveTasks,
+  pickTopTask,
+  priorityTextClass,
+} from "@/lib/priority";
 
 interface UrgencyRadarProps {
   tasks: Task[];
@@ -9,7 +15,7 @@ interface UrgencyRadarProps {
 }
 
 export function UrgencyRadar({ tasks, completed }: UrgencyRadarProps) {
-  const activeTasks = tasks.filter((_, index) => !completed.has(index));
+  const activeTasks = getActiveTasks(tasks, completed);
   const highCount = activeTasks.filter(
     (task) => task.priority === "high",
   ).length;
@@ -66,19 +72,12 @@ export function UrgencyRadar({ tasks, completed }: UrgencyRadarProps) {
                 <p className="text-base font-semibold">{mostUrgent.title}</p>
                 <p className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted sm:justify-start">
                   <span
-                    className={`font-medium uppercase tracking-wide ${
-                      mostUrgent.priority === "high"
-                        ? "text-danger"
-                        : mostUrgent.priority === "medium"
-                          ? "text-warning"
-                          : "text-muted"
-                    }`}
+                    className={cn(
+                      "font-medium uppercase tracking-wide",
+                      priorityTextClass(mostUrgent.priority),
+                    )}
                   >
-                    {mostUrgent.priority === "high"
-                      ? "High priority"
-                      : mostUrgent.priority === "medium"
-                        ? "Medium priority"
-                        : "Low priority"}
+                    {PRIORITY_LABELS[mostUrgent.priority]}
                   </span>
                   {mostUrgent.deadline ? (
                     <span>Due {mostUrgent.deadline}</span>

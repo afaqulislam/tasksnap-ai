@@ -8,12 +8,12 @@ import {
   isDemoMode,
 } from "@/lib/ai";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { MAX_IMAGE_BYTES } from "@/lib/config";
 import type { AnalyzeResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_TEXT_LENGTH = 12000;
 
 interface AnalyzeBody {

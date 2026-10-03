@@ -14,14 +14,17 @@ export const metadata: Metadata = {
     template: "%s · TaskSnap AI",
   },
   description:
-    "Upload a screenshot from WhatsApp, email, Discord, or any announcement. TaskSnap AI extracts tasks, deadlines, priorities, and assignees automatically.",
+    "Upload a screenshot from WhatsApp, email, Discord, or any announcement. TaskSnap AI reads the text in your browser and extracts tasks, deadlines, priorities, and assignees automatically.",
   keywords: [
     "AI task extraction",
     "screenshot to tasks",
+    "local OCR",
+    "Tesseract OCR",
     "task manager",
     "deadline tracking",
     "productivity",
     "WhatsApp tasks",
+    "open source Next.js app",
   ],
   applicationName: "TaskSnap AI",
   icons: {
@@ -30,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TaskSnap AI — Turn messy messages into actionable tasks",
     description:
-      "Upload a screenshot. TaskSnap AI extracts tasks, deadlines, priorities, and assignees automatically.",
+      "Upload a screenshot. Text is read locally in your browser, then AI extracts tasks, deadlines, priorities, and assignees.",
     type: "website",
     siteName: "TaskSnap AI",
   },
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TaskSnap AI — Turn messy messages into actionable tasks",
     description:
-      "Upload a screenshot from WhatsApp, email, Discord, or any announcement. TaskSnap AI turns it into a prioritized task list.",
+      "Upload a screenshot from WhatsApp, email, Discord, or any announcement. In-browser OCR plus AI turns it into a prioritized task list.",
   },
 };
 

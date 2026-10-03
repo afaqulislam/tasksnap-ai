@@ -43,7 +43,7 @@ dev-server.log
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+# NOTE: next-env.d.ts is intentionally committed — tsc needs it to resolve Next's ambient types.
 
 # local AI assistant tooling (reinstall with: uipro init --ai opencode)
 .opencode/

@@ -1,7 +1,13 @@
 import { motion } from "framer-motion";
 import { CalendarClock, Target } from "lucide-react";
+import { cn } from "@/lib/cn";
 import type { Task } from "@/lib/types";
-import { pickTopTask } from "@/lib/priority";
+import {
+  PRIORITY_LABELS,
+  getActiveTasks,
+  pickTopTask,
+  priorityTextClass,
+} from "@/lib/priority";
 
 interface WhatShouldIDoProps {
   tasks: Task[];
@@ -9,8 +15,7 @@ interface WhatShouldIDoProps {
 }
 
 export function WhatShouldIDo({ tasks, completed }: WhatShouldIDoProps) {
-  const activeTasks = tasks.filter((_, index) => !completed.has(index));
-  const top = pickTopTask(activeTasks);
+  const top = pickTopTask(getActiveTasks(tasks, completed));
   if (!top) return null;
 
   return (
@@ -40,15 +45,12 @@ export function WhatShouldIDo({ tasks, completed }: WhatShouldIDoProps) {
           className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted"
         >
           <span
-            className={`font-medium capitalize ${
-              top.priority === "high"
-                ? "text-danger"
-                : top.priority === "medium"
-                  ? "text-warning"
-                  : "text-muted"
-            }`}
+            className={cn(
+              "font-medium capitalize",
+              priorityTextClass(top.priority),
+            )}
           >
-            {top.priority} priority
+            {PRIORITY_LABELS[top.priority]}
           </span>
           {top.deadline ? (
             <span className="inline-flex items-center gap-1.5">

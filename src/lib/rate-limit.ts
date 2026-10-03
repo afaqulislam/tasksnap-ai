@@ -24,7 +24,7 @@ function pruneExpired(now: number): void {
   }
 }
 
-export type RateLimitResult =
+type RateLimitResult =
   | { ok: true }
   | { ok: false; retryAfterSeconds: number };
 

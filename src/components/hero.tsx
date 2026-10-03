@@ -44,8 +44,9 @@ export function Hero({ onUploadClick }: HeroProps) {
           className="max-w-xl text-balance text-base leading-relaxed text-muted sm:text-lg"
         >
           Upload a screenshot from WhatsApp, email, Discord, or any
-          announcement. TaskSnap AI reads the text right in your browser, then
-          extracts tasks, deadlines, priorities, and assignees automatically.
+          announcement. TaskSnap AI reads the text right in your browser —
+          no upload for reading — then extracts tasks, deadlines, priorities,
+          and assignees automatically.
         </motion.p>
         <motion.div
           {...fadeUp}
@@ -66,7 +67,8 @@ export function Hero({ onUploadClick }: HeroProps) {
             />
           </motion.button>
           <p className="text-xs text-muted/80">
-            No account · OCR runs in your browser · Takes seconds
+            No account · OCR runs in your browser · Multi-language · Free to
+            try
           </p>
         </motion.div>
         <motion.div

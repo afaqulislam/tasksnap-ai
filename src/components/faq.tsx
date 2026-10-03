@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { MAX_IMAGE_MB } from "@/lib/config";
 
 const FAQS = [
   {
@@ -12,27 +13,35 @@ const FAQS = [
   },
   {
     q: "Is it free to use?",
-    a: "The app is free and open source. OCR runs locally in your browser with no cost. Analyzing the extracted text uses your Groq (or Gemini) API key — Groq's free tier offers generous limits to get started.",
+    a: "Yes — the app is free and open source. OCR runs locally in your browser at no cost. Analysis uses your own Groq (or Gemini) API key, and Groq's free tier is generous enough to get started.",
   },
   {
     q: "Where does my data go?",
-    a: "Text extraction happens on your device — your screenshot is never uploaded for reading. Only the extracted text (or the image, if OCR fails) is sent to the AI provider. There's no account system and nothing is stored by TaskSnap AI.",
+    a: "Text extraction happens on your device — your screenshot is never uploaded for reading. Only the extracted text (or the image, if OCR finds nothing useful) is sent to the AI provider. There's no account system and nothing is stored by TaskSnap AI.",
+  },
+  {
+    q: "Which languages can it read?",
+    a: "Any language Tesseract supports. English is the default; set NEXT_PUBLIC_OCR_LANGS to a comma-separated list such as eng,urd,ara to read Urdu or Arabic screenshots too.",
   },
   {
     q: "What image formats are supported?",
-    a: "PNG, JPG, JPEG, and WEBP, up to 8 MB. Screenshots are auto-resized before analysis to keep things fast and token-friendly.",
+    a: `PNG, JPG, JPEG, and WEBP, up to ${MAX_IMAGE_MB} MB. Screenshots are auto-resized to a maximum of 1024px before analysis to keep things fast and token-friendly.`,
   },
   {
     q: "How accurate is the extraction?",
-    a: "Deadlines, priorities, and assignees are extracted only when they are explicit in the screenshot — the AI never invents details you can act on. If OCR can't read the image reliably, the app falls back to analyzing it directly.",
+    a: "Deadlines, priorities, and assignees are extracted only when they are explicit in the screenshot — the AI never invents details you can act on. Low-confidence OCR text is discarded, and if the image can't be read reliably the app falls back to analyzing it directly.",
+  },
+  {
+    q: "What happens if something goes wrong?",
+    a: "Every AI request has a timeout, so nothing hangs forever. If Groq is unavailable or rate-limited, TaskSnap automatically retries the Gemini provider when its key is configured — and if neither is available the app shows a clear message instead of failing silently.",
   },
   {
     q: "How many screenshots can I analyze?",
-    a: "Requests are limited per device/IP to keep the free AI tier usable for everyone (10 per 10 minutes on a sliding window). If you hit the limit, just wait a few minutes and try again.",
+    a: "Requests are limited per device/IP to keep the free AI tier usable for everyone (10 per 10 minutes on a sliding window). If you hit the limit, wait a few minutes and try again.",
   },
   {
     q: "Do I need an API key?",
-    a: "Without a key the app runs in demo mode with sample results. Add a free Groq (or Gemini) key to analyze real screenshots in production.",
+    a: "Not to try it — without a key the app runs in demo mode with clearly labeled sample results. Add a free Groq key for real analysis; a Gemini key is used as an automatic backup.",
   },
 ];
 
@@ -40,7 +49,7 @@ export function Faq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6 sm:pb-20">
+    <section id="faq" className="mx-auto w-full max-w-3xl scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-20">
       <div className="flex flex-col items-center text-center">
         <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-xs font-medium text-muted">
           <HelpCircle className="size-3.5 text-primary" aria-hidden />
