@@ -120,8 +120,11 @@ Open [http://localhost:3000](http://localhost:3000).
 | `AI_MODEL` | No | Model override. Default: `qwen/qwen3.8-27b`. |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | No | Gemini key — used only if `GROQ_API_KEY` is not set. |
 | `DEMO_MODE` | No | `true` returns sample results when no AI key is configured. Keep `false` in production. |
+| `NEXT_PUBLIC_OCR_LANGS` | No | Tesseract language codes for in-browser OCR, comma-separated. Default: `eng`. Add any languages, e.g. `eng,urd,ara`. |
 
 \* Without a key, the app runs in **demo mode** with clearly labeled sample tasks.
+
+> **Tip:** Screenshot text is read locally in your browser with [Tesseract.js](https://github.com/naptha/tesseract.js) — zero API tokens spent on OCR. The AI only receives the extracted text, so each analysis costs a fraction of the tokens a raw image would. The API still accepts images directly as a fallback (e.g. when OCR finds nothing useful).
 
 ## 📁 Project Structure
 
@@ -159,9 +162,9 @@ curl -X POST https://<your-domain>/api/analyze \
 {
   "tasks": [
     {
-      "title": "Submit CN Assignment",
-      "description": "Submit the Computer Networks assignment.",
-      "deadline": "Monday",
+      "title": "Submit project report",
+      "description": "Submit the final project report before the deadline.",
+      "deadline": "Friday",
       "priority": "high",
       "assignee": null
     }

@@ -47,3 +47,6 @@ next-env.d.ts
 
 # local AI assistant tooling (reinstall with: uipro init --ai opencode)
 .opencode/
+
+# OCR language data (downloaded by Tesseract.js into the project root)
+*.traineddata

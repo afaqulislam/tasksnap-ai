@@ -12,6 +12,9 @@ import { NoTasksFound } from "./no-tasks-found";
 import { UrgencyRadar } from "./urgency-radar";
 import { WhatShouldIDo } from "./what-should-i-do";
 import { TaskList } from "./task-list";
+import { HowItWorks } from "./how-it-works";
+import { Features } from "./features";
+import { Faq } from "./faq";
 import { Footer } from "./footer";
 import { parseAnalyzeResponse } from "@/lib/validate";
 import type { Phase, Task } from "@/lib/types";
@@ -133,25 +136,34 @@ export function TaskSnapApp() {
     setPhase("processing");
     try {
       const dataUrl = await prepareImageDataUrl(file);
+      let text = "";
+      try {
+        const { extractTextFromImage } = await import("@/lib/ocr");
+        text = await extractTextFromImage(dataUrl);
+      } catch {
+        // OCR failed; fall back to the image path
+      }
+      const body: Record<string, unknown> = { image: dataUrl };
+      if (text.trim()) body.text = text.trim();
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: dataUrl }),
+        body: JSON.stringify(body),
       });
-    if (!response.ok) {
-      let message = "Analysis failed. Please try again.";
-      try {
-        const body: unknown = await response.json();
-        const err =
-          typeof body === "object" && body !== null
-            ? (body as Record<string, unknown>).error
-            : undefined;
-        if (typeof err === "string" && err.length > 0) message = err;
-      } catch {
-        // fall back to the default message
+      if (!response.ok) {
+        let message = "Analysis failed. Please try again.";
+        try {
+          const body: unknown = await response.json();
+          const err =
+            typeof body === "object" && body !== null
+              ? (body as Record<string, unknown>).error
+              : undefined;
+          if (typeof err === "string" && err.length > 0) message = err;
+        } catch {
+          // fall back to the default message
+        }
+        throw new Error(message);
       }
-      throw new Error(message);
-    }
       const json: unknown = await response.json();
       const extracted = parseAnalyzeResponse(json);
       const demo =
@@ -327,6 +339,9 @@ export function TaskSnapApp() {
           ) : null}
         </div>
       </main>
+      <HowItWorks />
+      <Features />
+      <Faq />
       <Footer />
       </div>
     </MotionConfig>

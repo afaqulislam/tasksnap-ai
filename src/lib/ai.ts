@@ -45,6 +45,51 @@ Return exactly:
   ]
 }`;
 
+const SYSTEM_PROMPT_TEXT = `You are TaskSnap AI, an intelligent task extraction assistant.
+
+Analyze the provided text that was extracted from a screenshot via OCR.
+
+Identify every actionable task, assignment, event, responsibility, deadline, reminder, or action item that a person should remember or complete.
+
+For every task extract:
+
+1. title
+2. description
+3. deadline
+4. priority
+5. assignee
+
+Rules:
+
+- Only extract actionable information.
+- Do not invent information.
+- If a deadline is not explicitly available, return null.
+- If an assignee is not explicitly available, return null.
+- If priority is explicitly stated, preserve it.
+- If priority is not explicitly stated, infer it conservatively from urgency and importance.
+- Keep titles short.
+- Keep descriptions concise.
+- Preserve important context.
+- Do not create tasks from ordinary conversational text unless there is an actionable requirement.
+- Ignore OCR noise, stray characters, and duplicate lines.
+- Return valid JSON only.
+- Do not return markdown.
+- Do not explain reasoning.
+
+Return exactly:
+
+{
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "deadline": "string or null",
+      "priority": "high | medium | low",
+      "assignee": "string or null"
+    }
+  ]
+}`;
+
 const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export class ApiError extends Error {
@@ -133,37 +178,24 @@ function extractJson(text: string): unknown {
   }
 }
 
-async function analyzeWithGroq(dataUrl: string): Promise<Task[]> {
-  const apiKey = getGroqKey();
-  if (!apiKey) throw new Error("Missing Groq API key");
-
+function buildGroqBody(messages: Record<string, unknown>[]): Record<string, unknown> {
   const model = process.env.AI_MODEL?.trim() || "qwen/qwen3.8-27b";
-
   const body: Record<string, unknown> = {
     model,
     temperature: 0,
     max_tokens: 1200,
     response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: { url: dataUrl },
-          },
-          {
-            type: "text",
-            text: "Extract the actionable tasks from this screenshot. Return JSON only.",
-          },
-        ],
-      },
-    ],
+    messages,
   };
   if (model.toLowerCase().includes("qwen")) {
     body.reasoning_effort = "none";
   }
+  return body;
+}
+
+async function groqChat(body: Record<string, unknown>): Promise<Task[]> {
+  const apiKey = getGroqKey();
+  if (!apiKey) throw new Error("Missing Groq API key");
 
   async function call(attempt: number): Promise<Task[]> {
     const response = await fetch(
@@ -204,6 +236,42 @@ async function analyzeWithGroq(dataUrl: string): Promise<Task[]> {
   }
 
   return call(1);
+}
+
+async function analyzeWithGroqImage(dataUrl: string): Promise<Task[]> {
+  return groqChat(
+    buildGroqBody([
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: { url: dataUrl },
+          },
+          {
+            type: "text",
+            text: "Extract the actionable tasks from this screenshot. Return JSON only.",
+          },
+        ],
+      },
+    ]),
+  );
+}
+
+const MAX_TEXT_LENGTH = 8000;
+
+async function analyzeWithGroqText(text: string): Promise<Task[]> {
+  const clipped = text.slice(0, MAX_TEXT_LENGTH);
+  return groqChat(
+    buildGroqBody([
+      { role: "system", content: SYSTEM_PROMPT_TEXT },
+      {
+        role: "user",
+        content: `Text extracted from the screenshot:\n\n${clipped}\n\nExtract the actionable tasks. Return JSON only.`,
+      },
+    ]),
+  );
 }
 
 async function analyzeWithGemini(dataUrl: string): Promise<Task[]> {
@@ -248,52 +316,66 @@ async function analyzeWithGemini(dataUrl: string): Promise<Task[]> {
   return parseAnalyzeResponse(extractJson(content));
 }
 
-export async function extractTasksFromImage(dataUrl: string): Promise<Task[]> {
-  if (getGroqKey()) {
-    return analyzeWithGroq(dataUrl);
+export interface AnalyzeInput {
+  text?: string;
+  image?: string;
+}
+
+export async function extractTasksFromInput(
+  input: AnalyzeInput,
+): Promise<Task[]> {
+  const trimmedText = input.text?.trim();
+
+  if (trimmedText && getGroqKey()) {
+    const fromText = await analyzeWithGroqText(trimmedText);
+    if (fromText.length > 0 || !input.image) return fromText;
+    return analyzeWithGroqImage(input.image);
   }
-  if (getGeminiKey()) {
-    return analyzeWithGemini(dataUrl);
+
+  if (input.image) {
+    if (getGroqKey()) return analyzeWithGroqImage(input.image);
+    if (getGeminiKey()) return analyzeWithGemini(input.image);
   }
+
   throw new Error("No AI provider configured");
 }
 
 export function demoTasks(): Task[] {
   return [
     {
-      title: "CN Assignment",
-      description: "Submit the Computer Networks assignment.",
-      deadline: "Monday",
+      title: "Submit project report",
+      description: "Submit the final project report before the deadline.",
+      deadline: "Friday",
       priority: "high",
       assignee: null,
     },
     {
-      title: "AI Presentation",
-      description: "Present the AI project on Wednesday.",
+      title: "Prepare presentation",
+      description: "Prepare the presentation slides for next week.",
       deadline: "Wednesday",
       priority: "medium",
       assignee: null,
     },
     {
-      title: "Prepare Presentation Slides",
-      description: "Prepare the slides for the AI presentation.",
-      deadline: null,
-      priority: "medium",
-      assignee: "Afaq",
-    },
-    {
-      title: "Complete Research Report",
-      description: "Finish the research report for the AI project.",
+      title: "Write research notes",
+      description: "Summarize the key findings from the reading.",
       deadline: null,
       priority: "low",
-      assignee: "Ali",
+      assignee: "Team A",
     },
     {
-      title: "Team Meeting",
-      description: "Join the team meeting tomorrow at 5 PM.",
-      deadline: "Tomorrow at 5 PM",
-      priority: "high",
+      title: "Schedule team sync",
+      description: "Set up a quick sync with the team.",
+      deadline: "Tomorrow at 4 PM",
+      priority: "medium",
       assignee: null,
+    },
+    {
+      title: "Reply to client email",
+      description: "Respond to the pending client inquiry.",
+      deadline: null,
+      priority: "high",
+      assignee: "Team B",
     },
   ];
 }
