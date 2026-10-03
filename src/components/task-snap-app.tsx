@@ -14,7 +14,10 @@ import { WhatShouldIDo } from "./what-should-i-do";
 import { TaskList } from "./task-list";
 import { HowItWorks } from "./how-it-works";
 import { Features } from "./features";
+import { UseCases } from "./use-cases";
+import { Comparison } from "./comparison";
 import { Faq } from "./faq";
+import { CtaBanner } from "./cta-banner";
 import { Footer } from "./footer";
 import { parseAnalyzeResponse } from "@/lib/validate";
 import {
@@ -244,7 +247,7 @@ export function TaskSnapApp() {
         <main className="flex-1">
         <Hero onUploadClick={scrollToUpload} />
 
-        <div ref={uploadRef} className="scroll-mt-20 px-4 sm:px-6">
+        <div ref={uploadRef} className="scroll-mt-28 px-4 sm:px-6">
           {phase === "idle" ? <EmptyState /> : null}
 
           {phase === "idle" ||
@@ -264,7 +267,7 @@ export function TaskSnapApp() {
           {phase === "processing" ? <ProcessingState /> : null}
         </div>
 
-        <div ref={resultsRef} className="mt-6 scroll-mt-20 px-4 sm:px-6">
+        <div ref={resultsRef} className="mt-6 scroll-mt-28 px-4 sm:px-6">
           {phase === "done" && tasks.length === 0 ? (
             <NoTasksFound onReset={handleReset} />
           ) : null}
@@ -363,7 +366,10 @@ export function TaskSnapApp() {
       </main>
       <HowItWorks />
       <Features />
+      <UseCases />
+      <Comparison />
       <Faq />
+      <CtaBanner onUploadClick={scrollToUpload} />
       <Footer />
       </div>
     </MotionConfig>

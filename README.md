@@ -83,7 +83,7 @@ The interesting part of this project isn't the extraction — it's everything th
 | --- | --- |
 | Language | <img src="https://cdn.simpleicons.org/typescript/3178C6" height="14" alt="TypeScript" /> TypeScript |
 | Framework | <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="14" alt="Next.js" /> [Next.js 16](https://nextjs.org) — App Router, Turbopack, React Compiler |
-| UI | <img src="https://cdn.simpleicons.org/react/61DAFB" height="14" alt="React" /> React 19, <img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" height="14" alt="Tailwind CSS" /> [Tailwind CSS v4](https://tailwindcss.com), <img src="https://cdn.simpleicons.org/lucide/B5F2FF" height="14" alt="Lucide" /> Lucide icons, <img src="https://cdn.simpleicons.org/googlefonts/4285F4" height="14" alt="Inter" /> Inter |
+| UI | <img src="https://cdn.simpleicons.org/react/61DAFB" height="14" alt="React" /> React 19, <img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" height="14" alt="Tailwind CSS" /> [Tailwind CSS v4](https://tailwindcss.com), <img src="https://cdn.simpleicons.org/lucide/B5F2FF" height="14" alt="Lucide" /> Lucide icons, Space Grotesk (display), Inter (UI), JetBrains Mono (labels) |
 | Motion | <img src="https://cdn.simpleicons.org/framer/0055FF" height="14" alt="Framer Motion" /> [Framer Motion](https://www.framer.com/motion/) — with reduced-motion support |
 | AI — primary | ⚡ [Groq](https://console.groq.com) — text-first with JSON mode, vision fallback |
 | OCR | [Tesseract.js](https://github.com/naptha/tesseract.js) — runs in the browser, zero API tokens |
@@ -94,8 +94,8 @@ The interesting part of this project isn't the extraction — it's everything th
 ### Code distribution
 
 ```
-tsx █████████████░░░░░░░  TypeScript + JSX  69%
-ts  ██████░░░░░░░░░░░░░░  TypeScript        28%
+tsx ███████████████░░░░░  TypeScript + JSX  73%
+ts  █████░░░░░░░░░░░░░░░  TypeScript        24%
 css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     3%
 svg ░░░░░░░░░░░░░░░░░░░░  Icons             <1%
 ```

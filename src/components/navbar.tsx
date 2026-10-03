@@ -37,10 +37,10 @@ export function Navbar() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="sticky top-0 z-40 border-b border-edge bg-background/80 backdrop-blur"
     >
-      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
+      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
         <a
           href="#top"
-          className="flex items-center gap-2.5 text-sm font-semibold tracking-tight"
+          className="flex shrink-0 items-center gap-2.5 text-sm font-semibold tracking-tight"
         >
           <span className="flex size-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
             <Sparkles className="size-3.5" aria-hidden />
@@ -60,7 +60,7 @@ export function Navbar() {
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <a
             href={GITHUB_URL}
             target="_blank"
@@ -80,6 +80,30 @@ export function Navbar() {
             <span className="size-1.5 rounded-full bg-primary" aria-hidden />
             OCR + AI, no signup
           </span>
+        </div>
+      </nav>
+      <nav
+        aria-label="Sections"
+        className="border-t border-edge/60 md:hidden"
+      >
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+          {NAV_LINKS.map(({ href, label }) => (
+            <a
+              key={href}
+              href={href}
+              className="shrink-0 rounded-full px-3 py-1 text-xs font-medium text-muted transition hover:bg-card hover:text-foreground"
+            >
+              {label}
+            </a>
+          ))}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto shrink-0 rounded-full px-3 py-1 text-xs font-medium text-muted transition hover:text-foreground"
+          >
+            GitHub
+          </a>
         </div>
       </nav>
     </motion.header>

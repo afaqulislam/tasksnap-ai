@@ -25,9 +25,9 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-20 px-4 py-14 sm:px-6 sm:py-16">
+    <section id="how-it-works" className="mx-auto w-full max-w-5xl scroll-mt-28 px-4 py-14 sm:px-6 sm:py-16">
       <div className="flex flex-col items-center text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-xs font-medium text-muted">
+        <span className="font-mono-label inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-muted">
           <Sparkles className="size-3.5 text-primary" aria-hidden />
           How it works
         </span>

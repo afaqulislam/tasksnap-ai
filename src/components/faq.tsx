@@ -49,9 +49,9 @@ export function Faq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="mx-auto w-full max-w-3xl scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-20">
+    <section id="faq" className="mx-auto w-full max-w-3xl scroll-mt-28 px-4 pb-16 sm:px-6 sm:pb-20">
       <div className="flex flex-col items-center text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-xs font-medium text-muted">
+        <span className="font-mono-label inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-muted">
           <HelpCircle className="size-3.5 text-primary" aria-hidden />
           FAQ
         </span>
