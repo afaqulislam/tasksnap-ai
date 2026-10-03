@@ -12,19 +12,23 @@ const FAQS = [
   },
   {
     q: "Is it free to use?",
-    a: "The app is free and open source. Analyzing a screenshot uses your Groq (or Gemini) API key — Groq's free tier offers generous limits to get started.",
-  },
-  {
-    q: "What image formats are supported?",
-    a: "PNG, JPG, JPEG, and WEBP, up to 8 MB. Screenshots are auto-resized before analysis to keep things fast and rate-limit friendly.",
+    a: "The app is free and open source. OCR runs locally in your browser with no cost. Analyzing the extracted text uses your Groq (or Gemini) API key — Groq's free tier offers generous limits to get started.",
   },
   {
     q: "Where does my data go?",
-    a: "Screenshots are sent directly to the AI provider (Groq by default) for analysis. TaskSnap AI has no account system and stores nothing — see your provider's privacy policy for their handling.",
+    a: "Text extraction happens on your device — your screenshot is never uploaded for reading. Only the extracted text (or the image, if OCR fails) is sent to the AI provider. There's no account system and nothing is stored by TaskSnap AI.",
+  },
+  {
+    q: "What image formats are supported?",
+    a: "PNG, JPG, JPEG, and WEBP, up to 8 MB. Screenshots are auto-resized before analysis to keep things fast and token-friendly.",
   },
   {
     q: "How accurate is the extraction?",
-    a: "Deadlines, priorities, and assignees are extracted only when they are explicit in the screenshot — the AI never invents details you can act on.",
+    a: "Deadlines, priorities, and assignees are extracted only when they are explicit in the screenshot — the AI never invents details you can act on. If OCR can't read the image reliably, the app falls back to analyzing it directly.",
+  },
+  {
+    q: "How many screenshots can I analyze?",
+    a: "Requests are limited per device/IP to keep the free AI tier usable for everyone (10 per 10 minutes on a sliding window). If you hit the limit, just wait a few minutes and try again.",
   },
   {
     q: "Do I need an API key?",

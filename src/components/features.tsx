@@ -1,4 +1,4 @@
-import { Brain, CalendarClock, ImagePlus, ListChecks, Target, Zap } from "lucide-react";
+import { Brain, CalendarClock, ImagePlus, ScanText, ShieldCheck, Target } from "lucide-react";
 
 const FEATURES = [
   {
@@ -7,9 +7,14 @@ const FEATURES = [
     text: "Drag-and-drop or browse for images — PNG, JPG, JPEG, or WEBP, up to 8 MB.",
   },
   {
+    Icon: ScanText,
+    title: "In-browser OCR",
+    text: "Text is extracted on your device first — private, free, and zero API tokens spent.",
+  },
+  {
     Icon: Brain,
     title: "AI task detection",
-    text: "Real vision models extract actionable tasks from messy messages.",
+    text: "The AI works from clean extracted text — fewer tokens, sharper results.",
   },
   {
     Icon: CalendarClock,
@@ -22,14 +27,9 @@ const FEATURES = [
     text: "See at a glance which tasks need attention first.",
   },
   {
-    Icon: ListChecks,
-    title: "Task management",
-    text: "Track completion with a clean, satisfying progress checklist.",
-  },
-  {
-    Icon: Zap,
-    title: "Smart optimization",
-    text: "Images are auto-resized to stay fast and rate-limit friendly.",
+    Icon: ShieldCheck,
+    title: "Private & fair",
+    text: "Reading stays on your device, and per-user limits keep the AI queue fair.",
   },
 ];
 
@@ -38,7 +38,7 @@ export function Features() {
     <section id="features" className="mx-auto w-full max-w-5xl px-4 pb-14 sm:px-6 sm:pb-16">
       <div className="flex flex-col items-center text-center">
         <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-xs font-medium text-muted">
-          <Zap className="size-3.5 text-primary" aria-hidden />
+          <ShieldCheck className="size-3.5 text-primary" aria-hidden />
           Features
         </span>
         <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">

@@ -26,7 +26,7 @@ export function Hero({ onUploadClick }: HeroProps) {
           className="inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-xs font-medium text-muted"
         >
           <SparklesPill />
-          AI Task Extractor
+          Local OCR · AI Task Extractor
         </motion.span>
         <motion.h1
           {...fadeUp}
@@ -44,8 +44,8 @@ export function Hero({ onUploadClick }: HeroProps) {
           className="max-w-xl text-balance text-base leading-relaxed text-muted sm:text-lg"
         >
           Upload a screenshot from WhatsApp, email, Discord, or any
-          announcement. TaskSnap AI extracts tasks, deadlines, priorities, and
-          assignees automatically.
+          announcement. TaskSnap AI reads the text right in your browser, then
+          extracts tasks, deadlines, priorities, and assignees automatically.
         </motion.p>
         <motion.div
           {...fadeUp}
@@ -66,7 +66,7 @@ export function Hero({ onUploadClick }: HeroProps) {
             />
           </motion.button>
           <p className="text-xs text-muted/80">
-            No account required · AI-powered · Takes seconds
+            No account · OCR runs in your browser · Takes seconds
           </p>
         </motion.div>
         <motion.div

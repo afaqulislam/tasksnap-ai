@@ -1,4 +1,4 @@
-import { ImagePlus, ListChecks, Sparkles } from "lucide-react";
+import { ImagePlus, ListChecks, ScanText, Sparkles } from "lucide-react";
 
 const STEPS = [
   {
@@ -7,9 +7,14 @@ const STEPS = [
     text: "Drop any screenshot — WhatsApp, email, Discord, or an announcement.",
   },
   {
+    Icon: ScanText,
+    title: "OCR reads it locally",
+    text: "Tesseract extracts the text right in your browser — private and free of API tokens.",
+  },
+  {
     Icon: Sparkles,
-    title: "AI finds the tasks",
-    text: "TaskSnap AI spots tasks, deadlines, priorities, and assignees automatically.",
+    title: "AI builds your list",
+    text: "Tasks, deadlines, priorities, and assignees — extracted and organized for you.",
   },
   {
     Icon: ListChecks,
@@ -33,7 +38,7 @@ export function HowItWorks() {
           No typing, no copying — just snap, analyze, and go.
         </p>
       </div>
-      <div className="mt-10 grid gap-4 sm:grid-cols-3">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STEPS.map(({ Icon, title, text }, index) => (
           <div
             key={title}
