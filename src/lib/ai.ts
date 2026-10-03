@@ -92,6 +92,27 @@ Return exactly:
 
 const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
+const MAX_OUTPUT_TOKENS = 1400;
+const REQUEST_TIMEOUT_MS = 40_000;
+const MAX_RETRY_AFTER_SECONDS = 20;
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (error as { name?: string }).name === "AbortError";
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -183,7 +204,7 @@ function buildGroqBody(messages: Record<string, unknown>[]): Record<string, unkn
   const body: Record<string, unknown> = {
     model,
     temperature: 0,
-    max_tokens: 1200,
+    max_tokens: MAX_OUTPUT_TOKENS,
     response_format: { type: "json_object" },
     messages,
   };
@@ -198,40 +219,63 @@ async function groqChat(body: Record<string, unknown>): Promise<Task[]> {
   if (!apiKey) throw new Error("Missing Groq API key");
 
   async function call(attempt: number): Promise<Task[]> {
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      },
-    );
+      );
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw new ApiError("AI request timed out. Try again.", 500);
+      }
+      throw error;
+    }
 
     if (response.status === 429 && attempt < 2) {
       const bodyText = await response.text().catch(() => "");
       const retryAfter = parseRetryAfter(response, bodyText);
-      if (retryAfter !== null && retryAfter <= 5) {
+      if (
+        retryAfter !== null &&
+        retryAfter <= MAX_RETRY_AFTER_SECONDS
+      ) {
         await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
         return call(attempt + 1);
       }
-      throw new ApiError(
-        extractErrorMessage(bodyText) ??
-          "AI is rate-limited. Wait a moment and try again.",
-        429,
-      );
+      const message =
+        retryAfter !== null
+          ? `AI is rate-limited. Try again in ${Math.ceil(retryAfter)}s.`
+          : (extractErrorMessage(bodyText) ??
+            "AI is rate-limited. Wait a moment and try again.");
+      throw new ApiError(message, 429);
     }
 
     if (!response.ok) {
       const bodyText = await response.text().catch(() => "");
       console.error(`Groq API ${response.status}: ${bodyText.slice(0, 500)}`);
+      if (response.status >= 400 && response.status < 500) {
+        throw new ApiError(
+          "AI provider rejected the request. Check your API key and model setting.",
+          response.status,
+        );
+      }
       throw new Error(`AI provider returned ${response.status}`);
     }
 
     const data = await response.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    const completion = data?.choices?.[0];
+    if (completion?.finish_reason === "length") {
+      console.warn("Groq output truncated (finish_reason=length); treating as no tasks.");
+      return [];
+    }
+    const content: string = completion?.message?.content ?? "";
     return parseAnalyzeResponse(extractJson(content));
   }
 
@@ -282,38 +326,61 @@ async function analyzeWithGemini(dataUrl: string): Promise<Task[]> {
   const mime = dataUrl.split(";")[0].split(":")[1] || "image/png";
   const base64 = dataUrl.split(",")[1] || "";
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0,
-        },
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { inlineData: { mimeType: mime, data: base64 } },
-              { text: "Extract the actionable tasks from this screenshot." },
-            ],
-          },
-        ],
-      }),
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0,
     },
-  );
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { inlineData: { mimeType: mime, data: base64 } },
+          { text: "Extract the actionable tasks from this screenshot." },
+        ],
+      },
+    ],
+  });
 
-  if (!response.ok) {
-    throw new Error(`AI provider returned ${response.status}`);
+  async function call(attempt: number): Promise<Task[]> {
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw new ApiError("AI request timed out. Try again.", 500);
+      }
+      throw error;
+    }
+
+    if (response.status === 429 && attempt < 2) {
+      const retryAfter = Number(response.headers.get("Retry-After"));
+      if (Number.isFinite(retryAfter) && retryAfter <= MAX_RETRY_AFTER_SECONDS) {
+        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        return call(attempt + 1);
+      }
+      throw new ApiError("AI is rate-limited. Wait a moment and try again.", 429);
+    }
+
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => "");
+      console.error(`Gemini API ${response.status}: ${bodyText.slice(0, 500)}`);
+      throw new Error(`AI provider returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content: string =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    return parseAnalyzeResponse(extractJson(content));
   }
 
-  const data = await response.json();
-  const content: string =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  return parseAnalyzeResponse(extractJson(content));
+  return call(1);
 }
 
 export interface AnalyzeInput {
@@ -321,20 +388,43 @@ export interface AnalyzeInput {
   image?: string;
 }
 
+function runFallbackChain(fns: Array<() => Promise<Task[]>>): Promise<Task[]> {
+  let lastError: unknown;
+  const run = (index: number): Promise<Task[]> => {
+    if (index >= fns.length) return Promise.reject(lastError);
+    return fns[index]().catch((error: unknown) => {
+      lastError = error;
+      return run(index + 1);
+    });
+  };
+  return run(0);
+}
+
 export async function extractTasksFromInput(
   input: AnalyzeInput,
 ): Promise<Task[]> {
   const trimmedText = input.text?.trim();
+  const image = input.image;
+  const hasGroq = Boolean(getGroqKey());
+  const hasGemini = Boolean(getGeminiKey());
 
-  if (trimmedText && getGroqKey()) {
-    const fromText = await analyzeWithGroqText(trimmedText);
-    if (fromText.length > 0 || !input.image) return fromText;
-    return analyzeWithGroqImage(input.image);
+  if (trimmedText && hasGroq) {
+    const fromText = await runFallbackChain([
+      () => analyzeWithGroqText(trimmedText),
+      ...(image && hasGemini ? [() => analyzeWithGemini(image)] : []),
+    ]);
+    if (fromText.length > 0 || !image) return fromText;
+    return runFallbackChain([
+      () => analyzeWithGroqImage(image),
+      ...(hasGemini ? [() => analyzeWithGemini(image)] : []),
+    ]);
   }
 
-  if (input.image) {
-    if (getGroqKey()) return analyzeWithGroqImage(input.image);
-    if (getGeminiKey()) return analyzeWithGemini(input.image);
+  if (image) {
+    return runFallbackChain([
+      ...(hasGroq ? [() => analyzeWithGroqImage(image)] : []),
+      ...(hasGemini ? [() => analyzeWithGemini(image)] : []),
+    ]);
   }
 
   throw new Error("No AI provider configured");

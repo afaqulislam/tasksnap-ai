@@ -1,8 +1,28 @@
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 10;
 const MAX_TRACKED_IPS = 500;
+const PRUNE_EVERY_OP = 64;
 
 const hits = new Map<string, number[]>();
+let ops = 0;
+
+const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+const IPV6_RE = /^[0-9a-fA-F:]{2,45}$/;
+
+function isValidIp(value: string): boolean {
+  if (IPV4_RE.test(value)) {
+    const parts = value.split(".");
+    return parts.every((part) => Number(part) >= 0 && Number(part) <= 255);
+  }
+  return IPV6_RE.test(value) && value.includes(":");
+}
+
+function pruneExpired(now: number): void {
+  const windowStart = now - WINDOW_MS;
+  for (const [key, values] of hits) {
+    if (values.every((t) => t <= windowStart)) hits.delete(key);
+  }
+}
 
 export type RateLimitResult =
   | { ok: true }
@@ -11,10 +31,14 @@ export type RateLimitResult =
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
+    for (const hop of forwarded.split(",")) {
+      const candidate = hop.trim().toLowerCase();
+      if (candidate && isValidIp(candidate)) return candidate;
+    }
   }
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
+  const real = request.headers.get("x-real-ip")?.trim().toLowerCase();
+  if (real && isValidIp(real)) return real;
+  return "unknown";
 }
 
 export function checkRateLimit(ip: string, now = Date.now()): RateLimitResult {
@@ -35,9 +59,15 @@ export function checkRateLimit(ip: string, now = Date.now()): RateLimitResult {
   timestamps.push(now);
   hits.set(ip, timestamps);
 
+  ops += 1;
+  if (ops % PRUNE_EVERY_OP === 0) {
+    pruneExpired(now);
+  }
   if (hits.size > MAX_TRACKED_IPS) {
-    for (const [key, values] of hits) {
-      if (values.every((t) => t <= windowStart)) hits.delete(key);
+    pruneExpired(now);
+    for (const key of hits.keys()) {
+      if (hits.size <= MAX_TRACKED_IPS) break;
+      hits.delete(key);
     }
   }
 

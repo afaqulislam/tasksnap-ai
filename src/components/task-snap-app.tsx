@@ -34,6 +34,24 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 const MAX_IMAGE_DIMENSION = 1024;
 
+const OCR_TIMEOUT_MS = 45_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("OCR timed out")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 async function prepareImageDataUrl(file: File): Promise<string> {
   const raw = await readFileAsDataUrl(file);
   return new Promise((resolve, reject) => {
@@ -77,6 +95,7 @@ export function TaskSnapApp() {
 
   const uploadRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -93,6 +112,10 @@ export function TaskSnapApp() {
   function handleFileSelected(selected: File) {
     if (!ALLOWED_TYPES.includes(selected.type)) {
       setError("Please upload an image file.");
+      return;
+    }
+    if (selected.size === 0) {
+      setError("This file is empty. Please choose a valid screenshot.");
       return;
     }
     if (selected.size > MAX_IMAGE_BYTES) {
@@ -132,19 +155,26 @@ export function TaskSnapApp() {
   }
 
   async function handleSubmit() {
-    if (!file || !previewUrl) return;
+    if (!file || !previewUrl || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setPhase("processing");
     try {
       const dataUrl = await prepareImageDataUrl(file);
       let text = "";
       try {
-        const { extractTextFromImage } = await import("@/lib/ocr");
-        text = await extractTextFromImage(dataUrl);
+        const { extractTextFromImage, isMeaningfulOcrText } = await import(
+          "@/lib/ocr"
+        );
+        const extracted = await withTimeout(
+          extractTextFromImage(dataUrl),
+          OCR_TIMEOUT_MS,
+        );
+        if (isMeaningfulOcrText(extracted)) text = extracted.trim();
       } catch {
-        // OCR failed; fall back to the image path
+        // OCR failed or timed out; fall back to the image path
       }
       const body: Record<string, unknown> = { image: dataUrl };
-      if (text.trim()) body.text = text.trim();
+      if (text) body.text = text;
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -180,6 +210,8 @@ export function TaskSnapApp() {
           : "Unable to analyze the screenshot",
       );
       setPhase("error");
+    } finally {
+      isSubmittingRef.current = false;
     }
   }
 

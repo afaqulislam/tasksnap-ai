@@ -12,7 +12,7 @@ export async function GET() {
       next: { revalidate: 3600 },
     });
     if (!response.ok) {
-      return NextResponse.json({ stars: null }, { status: 502 });
+      return NextResponse.json({ stars: null });
     }
     const data: unknown = await response.json();
     const stars =
@@ -23,6 +23,6 @@ export async function GET() {
         : null;
     return NextResponse.json({ stars });
   } catch {
-    return NextResponse.json({ stars: null }, { status: 502 });
+    return NextResponse.json({ stars: null });
   }
 }
