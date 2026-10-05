@@ -247,7 +247,7 @@ export function TaskSnapApp() {
         <main className="flex-1">
         <Hero onUploadClick={scrollToUpload} />
 
-        <div ref={uploadRef} className="scroll-mt-28 px-4 sm:px-6">
+        <div id="upload" ref={uploadRef} className="scroll-mt-28 px-4 sm:px-6">
           {phase === "idle" ? <EmptyState /> : null}
 
           {phase === "idle" ||

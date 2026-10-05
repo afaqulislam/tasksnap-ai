@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, Star } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Menu, Sparkles, Star, X } from "lucide-react";
 import { GithubIcon } from "./brand-icons";
 import { GITHUB_URL } from "@/lib/config";
 
 const NAV_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#features", label: "Features" },
+  { href: "#use-cases", label: "Use cases" },
+  { href: "#comparison", label: "Why TaskSnap" },
   { href: "#faq", label: "FAQ" },
 ];
 
 export function Navbar() {
   const [stars, setStars] = useState<number | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,12 +33,21 @@ export function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isMenuOpen]);
+
   return (
     <motion.header
       initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="sticky top-0 z-40 border-b border-edge bg-background/80 backdrop-blur"
+      className="sticky top-0 z-40 border-b border-edge bg-background/85 backdrop-blur"
     >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
         <a
@@ -49,7 +61,8 @@ export function Navbar() {
             TaskSnap<span className="text-primary"> AI</span>
           </span>
         </a>
-        <nav className="hidden items-center gap-1 md:flex">
+
+        <div className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map(({ href, label }) => (
             <a
               key={href}
@@ -59,7 +72,8 @@ export function Navbar() {
               {label}
             </a>
           ))}
-        </nav>
+        </div>
+
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <a
             href={GITHUB_URL}
@@ -76,36 +90,62 @@ export function Navbar() {
               </span>
             ) : null}
           </a>
-          <span className="hidden items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs text-muted lg:inline-flex">
-            <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-            OCR + AI, no signup
-          </span>
-        </div>
-      </nav>
-      <nav
-        aria-label="Sections"
-        className="border-t border-edge/60 md:hidden"
-      >
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
-          {NAV_LINKS.map(({ href, label }) => (
-            <a
-              key={href}
-              href={href}
-              className="shrink-0 rounded-full px-3 py-1 text-xs font-medium text-muted transition hover:bg-card hover:text-foreground"
-            >
-              {label}
-            </a>
-          ))}
           <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto shrink-0 rounded-full px-3 py-1 text-xs font-medium text-muted transition hover:text-foreground"
+            href="#upload"
+            className="hidden h-9 items-center rounded-full bg-primary px-4 text-xs font-semibold text-on-primary transition hover:bg-primary-strong sm:inline-flex"
           >
-            GitHub
+            Try it free
           </a>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            className="inline-flex size-9 items-center justify-center rounded-full border border-edge bg-card text-muted transition hover:text-foreground md:hidden"
+          >
+            {isMenuOpen ? (
+              <X className="size-4" aria-hidden />
+            ) : (
+              <Menu className="size-4" aria-hidden />
+            )}
+          </button>
         </div>
       </nav>
+
+      <AnimatePresence initial={false}>
+        {isMenuOpen ? (
+          <motion.div
+            id="mobile-menu"
+            key="mobile-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden border-t border-edge bg-background md:hidden"
+          >
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-1 px-4 py-3 sm:px-6">
+              {NAV_LINKS.map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-card hover:text-foreground"
+                >
+                  {label}
+                </a>
+              ))}
+              <a
+                href="#upload"
+                onClick={() => setIsMenuOpen(false)}
+                className="mt-1 inline-flex h-10 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-on-primary transition hover:bg-primary-strong"
+              >
+                Try it free
+              </a>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.header>
   );
 }

@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/afaqulislam/tasksnap-ai.git"
+    "url": "git+https://tasksnapai-aui.vercel.app.git"
   },
-  "homepage": "https://github.com/afaqulislam/tasksnap-ai#readme",
+  "homepage": "https://tasksnapai-aui.vercel.app",
   "bugs": {
-    "url": "https://github.com/afaqulislam/tasksnap-ai/issues"
+    "url": "https://tasksnapai-aui.vercel.app/issues"
   },
   "keywords": [
     "nextjs",

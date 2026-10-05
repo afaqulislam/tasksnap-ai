@@ -1,4 +1,4 @@
-import { Bell, Briefcase, GraduationCap } from "lucide-react";
+import { Bell, Briefcase, Compass, GraduationCap } from "lucide-react";
 
 const USE_CASES = [
   {
@@ -29,6 +29,7 @@ export function UseCases() {
     >
       <div className="flex flex-col items-center text-center">
         <span className="font-mono-label inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-muted">
+          <Compass className="size-3.5 text-primary" aria-hidden />
           Use cases
         </span>
         <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">

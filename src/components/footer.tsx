@@ -111,14 +111,11 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-edge pt-6 text-xs text-muted/70 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-edge pt-6 text-xs text-muted/70 sm:flex-row">
           <p>
-            © {year} TaskSnap AI. Built for Chai aur Code.
+            © {year} TaskSnap AI. All rights reserved.
           </p>
-          <p>
-            Free &amp; open source (MIT) · Built with Next.js, Tesseract.js
-            &amp; Groq
-          </p>
+          <p>Free &amp; open source under the MIT License</p>
         </div>
       </div>
     </footer>

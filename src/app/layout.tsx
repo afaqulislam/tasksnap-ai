@@ -21,6 +21,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://tasksnapai-aui.vercel.app"),
   title: {
     default: "TaskSnap AI — Turn messy messages into actionable tasks",
     template: "%s · TaskSnap AI",
@@ -39,6 +40,9 @@ export const metadata: Metadata = {
     "open source Next.js app",
   ],
   applicationName: "TaskSnap AI",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
@@ -48,12 +52,14 @@ export const metadata: Metadata = {
       "Upload a screenshot. Text is read locally in your browser, then AI extracts tasks, deadlines, priorities, and assignees.",
     type: "website",
     siteName: "TaskSnap AI",
+    url: "https://tasksnapai-aui.vercel.app",
   },
   twitter: {
     card: "summary_large_image",
     title: "TaskSnap AI — Turn messy messages into actionable tasks",
     description:
       "Upload a screenshot from WhatsApp, email, Discord, or any announcement. In-browser OCR plus AI turns it into a prioritized task list.",
+    site: "@afaqulislam708",
   },
 };
 
@@ -62,7 +68,7 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"

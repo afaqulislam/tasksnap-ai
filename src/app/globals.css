@@ -91,6 +91,10 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -122,9 +126,6 @@ h3 {
   outline-offset: 2px;
 }
 
-.text-balance {
-  text-wrap: balance;
-}
 
 @media (prefers-reduced-motion: reduce) {
   *,

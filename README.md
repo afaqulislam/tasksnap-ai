@@ -12,7 +12,7 @@ No typing. No copy-pasting. No missed assignments.
 <img src="https://cdn.simpleicons.org/typescript/3178C6" height="16" alt="TypeScript" /> TypeScript &nbsp;·&nbsp; <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="16" alt="Next.js" /> Next.js 16 &nbsp;·&nbsp; <img src="https://cdn.simpleicons.org/react/61DAFB" height="16" alt="React" /> React 19 &nbsp;·&nbsp; <img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" height="16" alt="Tailwind CSS" /> Tailwind CSS v4 &nbsp;·&nbsp;
 <img src="https://cdn.simpleicons.org/framer/0055FF" height="16" alt="Framer Motion" /> Framer Motion &nbsp;·&nbsp; 🔤 Tesseract.js &nbsp;·&nbsp; ⚡ Groq AI
 
-[![CI](https://github.com/afaqulislam/tasksnap-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/afaqulislam/tasksnap-ai/actions/workflows/ci.yml) [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org) [![License: MIT](https://img.shields.io/badge/License-MIT-teal?style=flat-square)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit-22c55e?style=flat-square&logo=vercel)](https://tasksnapai-aui.vercel.app) [![CI](https://github.com/afaqulislam/tasksnap-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/afaqulislam/tasksnap-ai/actions/workflows/ci.yml) [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org) [![License: MIT](https://img.shields.io/badge/License-MIT-teal?style=flat-square)](LICENSE)
 
 [About](#-about) · [Built for Chai aur Code](#-built-for-chai-aur-code) · [Features](#-features) · [How It Works](#-how-it-works) · [Reliability](#-reliability) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [Deployment](#-deployment) · [Contributing](#-contributing) · [License](#-license)
 
@@ -165,6 +165,8 @@ src/
 │   └── page.tsx              # Entry page
 ├── components/               # Navbar, Hero, UploadZone, TaskCard, ...
 └── lib/
+  - cn.ts              # class name utility (clsx + tailwind-merge)
+  - cn.ts              # class name utility (clsx + tailwind-merge)
     ├── ai.ts                 # Groq + Gemini providers, prompts, fallback chain
     ├── config.ts             # Repo links, upload limits, shared constants
     ├── ocr.ts                # Tesseract worker, OCR sanity check

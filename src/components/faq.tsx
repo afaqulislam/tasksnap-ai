@@ -13,7 +13,7 @@ const FAQS = [
   },
   {
     q: "Is it free to use?",
-    a: "Yes — the app is free and open source. OCR runs locally in your browser at no cost. Analysis uses your own Groq (or Gemini) API key, and Groq's free tier is generous enough to get started.",
+    a: "Yes — the app is free and open source. Reading the screenshot happens on your device at no cost, and analysis runs on a free AI tier that's more than enough to try it out.",
   },
   {
     q: "Where does my data go?",
@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: "Which languages can it read?",
-    a: "Any language Tesseract supports. English is the default; set NEXT_PUBLIC_OCR_LANGS to a comma-separated list such as eng,urd,ara to read Urdu or Arabic screenshots too.",
+    a: "English out of the box, and Urdu, Arabic, Spanish, German, and 100+ other languages when you enable them in your deployment.",
   },
   {
     q: "What image formats are supported?",
@@ -37,11 +37,11 @@ const FAQS = [
   },
   {
     q: "How many screenshots can I analyze?",
-    a: "Requests are limited per device/IP to keep the free AI tier usable for everyone (10 per 10 minutes on a sliding window). If you hit the limit, wait a few minutes and try again.",
+    a: "Enough to cover a busy day of group chats. To keep things fair for everyone on the free AI tier, each device gets a short cooldown between analyses — if you hit it, the app tells you exactly how long to wait.",
   },
   {
     q: "Do I need an API key?",
-    a: "Not to try it — without a key the app runs in demo mode with clearly labeled sample results. Add a free Groq key for real analysis; a Gemini key is used as an automatic backup.",
+    a: "Not to try it — without a key the app runs in demo mode with clearly labeled sample results. Add a free Groq key (or Google Gemini) when you're ready to analyze your own screenshots.",
   },
 ];
 

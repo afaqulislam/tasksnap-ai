@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { Check, CircleX } from "lucide-react";
+import { Check, CircleX, Scale } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const ROWS = [
@@ -43,9 +43,10 @@ export function Comparison() {
     >
       <div className="flex flex-col items-center text-center">
         <span className="font-mono-label inline-flex items-center gap-2 rounded-full border border-edge bg-card px-3.5 py-1.5 text-muted">
+          <Scale className="size-3.5 text-primary" aria-hidden />
           Why TaskSnap
         </span>
-        <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 className="text-balance mt-4 text-2xl font-bold tracking-tight sm:text-3xl">
           The manual way, vs. the snapshot way.
         </h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
@@ -53,42 +54,75 @@ export function Comparison() {
           keeps leaking context.
         </p>
       </div>
-      <div className="mt-10 overflow-hidden rounded-2xl border border-edge">
-        <div className="grid grid-cols-[1.1fr_1fr_1fr] gap-px bg-edge text-xs sm:text-sm">
-          <div className="bg-surface px-4 py-3 font-mono-label text-muted">
-            Outcome
-          </div>
-          <div className="bg-surface px-4 py-3 font-mono-label text-muted">
-            Manual
-          </div>
-          <div className="bg-primary/10 px-4 py-3 font-mono-label text-primary">
-            TaskSnap AI
-          </div>
-          {ROWS.map((row) => (
-            <Fragment key={row.label}>
-              <div className="bg-card px-4 py-3.5 font-medium">{row.label}</div>
-              <div className="flex items-start gap-2 bg-card px-4 py-3.5 text-muted">
+
+      <div className="mt-10 flex flex-col gap-3 lg:hidden">
+        {ROWS.map((row) => (
+          <div
+            key={row.label}
+            className="rounded-2xl border border-edge bg-card p-4"
+          >
+            <h3 className="text-sm font-semibold">{row.label}</h3>
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="flex items-start gap-2 text-sm leading-relaxed text-muted">
                 <CircleX
                   className="mt-0.5 size-4 shrink-0 text-muted/70"
                   aria-hidden
                 />
-                <span className="text-sm leading-relaxed">
+                <span>
+                  <span className="font-medium text-foreground/80">
+                    Manual:{" "}
+                  </span>
                   {row.manual}
                 </span>
-              </div>
-              <div
-                className={cn(
-                  "flex items-start gap-2 px-4 py-3.5",
-                  "bg-primary/[0.04] text-foreground",
-                )}
-              >
+              </p>
+              <p className="flex items-start gap-2 text-sm leading-relaxed">
                 <Check
                   className="mt-0.5 size-4 shrink-0 text-primary"
                   aria-hidden
                 />
-                <span className="text-sm leading-relaxed">
+                <span>
+                  <span className="font-medium text-primary">
+                    TaskSnap:{" "}
+                  </span>
                   {row.tasksnap}
                 </span>
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-10 hidden overflow-hidden rounded-2xl border border-edge lg:block">
+        <div className="grid grid-cols-[1.1fr_1fr_1fr] gap-px bg-edge text-sm">
+          <div className="bg-surface px-5 py-3.5 font-mono-label text-muted">
+            Outcome
+          </div>
+          <div className="bg-surface px-5 py-3.5 font-mono-label text-muted">
+            Manual
+          </div>
+          <div className="bg-primary/10 px-5 py-3.5 font-mono-label text-primary">
+            TaskSnap AI
+          </div>
+          {ROWS.map((row) => (
+            <Fragment key={row.label}>
+              <div className="bg-card px-5 py-4 font-medium">{row.label}</div>
+              <div
+                className={cn(
+                  "flex items-start gap-2 bg-card px-5 py-4 text-muted",
+                )}
+              >
+                <CircleX
+                  className="mt-0.5 size-4 shrink-0 text-muted/70"
+                  aria-hidden
+                />
+                <span className="text-sm leading-relaxed">{row.manual}</span>
+              </div>
+              <div className="flex items-start gap-2 bg-primary/[0.04] px-5 py-4">
+                <Check
+                  className="mt-0.5 size-4 shrink-0 text-primary"
+                  aria-hidden
+                />
+                <span className="text-sm leading-relaxed">{row.tasksnap}</span>
               </div>
             </Fragment>
           ))}
