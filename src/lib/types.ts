@@ -14,3 +14,8 @@ export interface AnalyzeResponse {
 }
 
 export type Phase = "idle" | "selected" | "processing" | "done" | "error";
+
+export interface AnalyzeInput {
+  text?: string;
+  image?: string;
+}

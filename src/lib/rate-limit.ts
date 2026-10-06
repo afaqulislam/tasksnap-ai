@@ -28,11 +28,19 @@ type RateLimitResult =
   | { ok: true }
   | { ok: false; retryAfterSeconds: number };
 
+/**
+ * Reads the client address from proxy headers.
+ *
+ * The *last* valid `x-forwarded-for` hop is used because that is the entry
+ * appended by the nearest trusted proxy — earlier hops are client-supplied
+ * and would let callers rotate an address to bypass the limiter.
+ */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    for (const hop of forwarded.split(",")) {
-      const candidate = hop.trim().toLowerCase();
+    const hops = forwarded.split(",");
+    for (let i = hops.length - 1; i >= 0; i -= 1) {
+      const candidate = hops[i].trim().toLowerCase();
       if (candidate && isValidIp(candidate)) return candidate;
     }
   }
@@ -72,4 +80,17 @@ export function checkRateLimit(ip: string, now = Date.now()): RateLimitResult {
   }
 
   return { ok: true };
+}
+
+/**
+ * Gives a slot back when the request never reached the AI provider
+ * (provider outage, timeout, unexpected crash) so users are not charged
+ * for failures they could not avoid.
+ */
+export function refundRateLimit(ip: string, now = Date.now()): void {
+  const timestamps = hits.get(ip);
+  if (!timestamps || timestamps.length === 0) return;
+  const last = timestamps[timestamps.length - 1];
+  if (last !== undefined && last > now - WINDOW_MS) timestamps.pop();
+  if (timestamps.length === 0) hits.delete(ip);
 }

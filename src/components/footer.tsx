@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { LinkedinIcon, XIcon } from "./brand-icons";
 import { GITHUB_URL } from "@/lib/config";
@@ -40,21 +40,14 @@ const FOOTER_LINKS = [
     title: "Legal",
     links: [
       { label: "MIT License", href: `${GITHUB_URL}/blob/main/LICENSE` },
-      { label: "Privacy", href: "#faq" },
-      { label: "Usage limits", href: "#faq" },
+      { label: "Privacy", href: "#faq-data" },
+      { label: "Usage limits", href: "#faq-limits" },
     ],
   },
 ];
 
 export function Footer() {
-  const [year, setYear] = useState(() => new Date().getFullYear());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setYear(new Date().getFullYear());
-    }, 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const [year] = useState(() => new Date().getFullYear());
 
   return (
     <footer className="mt-auto border-t border-edge">

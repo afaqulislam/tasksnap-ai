@@ -20,7 +20,7 @@ const fadeUp = {
 };
 
 const BENEFITS = [
-  { Icon: Lock, text: "Screenshot never uploaded for reading" },
+  { Icon: Lock, text: "OCR runs in your browser" },
   { Icon: Gauge, text: "Text-first AI — a fraction of the tokens" },
   { Icon: Star, text: "Deadlines only when explicitly stated" },
 ];
@@ -34,9 +34,9 @@ const SOURCES = [
 
 const STATS = [
   { value: "3", label: "steps, start to checklist" },
-  { value: "0", label: "screenshots uploaded for OCR" },
-  { value: "~5s", label: "average time to first task" },
+  { value: "2", label: "AI providers, automatic fallback" },
   { value: "100+", label: "OCR languages supported" },
+  { value: "8 MB", label: "max screenshot size" },
 ];
 
 interface HeroProps {

@@ -26,8 +26,8 @@ export function TaskCard({ task, isCompleted, onToggle }: TaskCardProps) {
       }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       className={cn(
-        "group rounded-2xl border bg-card p-5 transition-colors sm:p-6",
-        isCompleted ? "border-edge" : "border-edge hover:border-primary/40",
+        "group rounded-2xl border border-edge bg-card p-5 transition-colors sm:p-6",
+        !isCompleted && "hover:border-primary/40",
       )}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

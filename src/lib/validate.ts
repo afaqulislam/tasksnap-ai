@@ -22,11 +22,9 @@ function parseTask(raw: unknown): Task | null {
   const title = cleanText(record.title);
   if (!title) return null;
 
-  const priority = isPriority(record.priority)
-    ? record.priority
-    : record.priority === undefined || record.priority === null
-      ? "medium"
-      : "low";
+  // Anything the model labels oddly ("urgent", "P1", "ASAP") is treated as
+  // medium rather than silently downgraded to low.
+  const priority = isPriority(record.priority) ? record.priority : "medium";
 
   return {
     title: title.slice(0, 140),

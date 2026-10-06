@@ -149,10 +149,12 @@ export function TaskSnapApp() {
   }
 
   function handleRetry() {
+    setError(null);
     setPhase("selected");
   }
 
   function handleBack() {
+    setError(null);
     setPhase("selected");
     scrollToUpload();
   }
@@ -176,8 +178,11 @@ export function TaskSnapApp() {
       } catch {
         // OCR failed or timed out; fall back to the image path
       }
-      const body: Record<string, unknown> = { image: dataUrl };
-      if (text) body.text = text;
+      // Only the extracted text travels when OCR succeeded; the image is
+      // uploaded solely as the fallback for screenshots OCR cannot read.
+      const body: Record<string, unknown> = text
+        ? { text }
+        : { image: dataUrl };
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -347,8 +352,9 @@ export function TaskSnapApp() {
                 </div>
                 {isDemo ? (
                   <p className="mt-3 rounded-xl border border-warning/25 bg-warning/5 px-4 py-2.5 text-xs leading-relaxed text-warning">
-                    Demo mode — sample results shown because no AI provider key
-                    is configured. Add an API key to analyze real screenshots.
+                    Sample results — AI analysis isn&apos;t connected on this
+                    deployment yet, so these are example tasks rather than your
+                    screenshot.
                   </p>
                 ) : null}
               </div>

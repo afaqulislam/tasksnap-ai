@@ -13,3 +13,8 @@ export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 export const MAX_IMAGE_MB = MAX_IMAGE_BYTES / (1024 * 1024);
 
 export const MAX_IMAGE_DIMENSION = 1024;
+
+export const MAX_TEXT_LENGTH = 8000;
+
+// 8 MB image → ~11 MB of base64, plus the JSON envelope and OCR text.
+export const MAX_REQUEST_BYTES = 12 * 1024 * 1024;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Sparkles, Star, X } from "lucide-react";
 import { GithubIcon } from "./brand-icons";
@@ -17,6 +18,18 @@ const NAV_LINKS = [
 export function Navbar() {
   const [stars, setStars] = useState<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const pendingHash = useRef<string | null>(null);
+
+  function scrollToHash(hash: string) {
+    const target = document.querySelector(hash);
+    if (!target) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: "start",
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -38,12 +51,50 @@ export function Navbar() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setIsMenuOpen(false);
     };
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (target && !headerRef.current?.contains(target)) {
+        setIsMenuOpen(false);
+      }
+    };
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+    };
   }, [isMenuOpen]);
+
+  function handleNavClick(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) {
+    const target = document.querySelector(href);
+    if (!target) return;
+
+    event.preventDefault();
+    if (window.location.hash !== href) {
+      window.history.replaceState(null, "", href);
+    }
+
+    // Closing the menu animates its panel, which cancels a smooth scroll
+    // started in the same frame — so scroll once that exit has finished.
+    if (isMenuOpen) {
+      pendingHash.current = href;
+      setIsMenuOpen(false);
+      window.setTimeout(() => {
+        if (pendingHash.current !== href) return;
+        pendingHash.current = null;
+        scrollToHash(href);
+      }, 600);
+      return;
+    }
+    scrollToHash(href);
+  }
 
   return (
     <motion.header
+      ref={headerRef}
       initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
@@ -52,6 +103,7 @@ export function Navbar() {
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
         <a
           href="#top"
+          onClick={(event) => handleNavClick(event, "#top")}
           className="flex shrink-0 items-center gap-2.5 text-sm font-semibold tracking-tight"
         >
           <span className="flex size-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -67,6 +119,7 @@ export function Navbar() {
             <a
               key={href}
               href={href}
+              onClick={(event) => handleNavClick(event, href)}
               className="rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-card hover:text-foreground"
             >
               {label}
@@ -92,6 +145,7 @@ export function Navbar() {
           </a>
           <a
             href="#upload"
+            onClick={(event) => handleNavClick(event, "#upload")}
             className="hidden h-9 items-center rounded-full bg-primary px-4 text-xs font-semibold text-on-primary transition hover:bg-primary-strong sm:inline-flex"
           >
             Try it free
@@ -113,7 +167,15 @@ export function Navbar() {
         </div>
       </nav>
 
-      <AnimatePresence initial={false}>
+      <AnimatePresence
+        initial={false}
+        onExitComplete={() => {
+          const hash = pendingHash.current;
+          if (!hash) return;
+          pendingHash.current = null;
+          scrollToHash(hash);
+        }}
+      >
         {isMenuOpen ? (
           <motion.div
             id="mobile-menu"
@@ -122,14 +184,14 @@ export function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-edge bg-background md:hidden"
+            className="absolute inset-x-0 top-full overflow-hidden border-b border-edge bg-background shadow-xl md:hidden"
           >
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-1 px-4 py-3 sm:px-6">
               {NAV_LINKS.map(({ href, label }) => (
                 <a
                   key={href}
                   href={href}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(event) => handleNavClick(event, href)}
                   className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-card hover:text-foreground"
                 >
                   {label}
@@ -137,7 +199,7 @@ export function Navbar() {
               ))}
               <a
                 href="#upload"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={(event) => handleNavClick(event, "#upload")}
                 className="mt-1 inline-flex h-10 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-on-primary transition hover:bg-primary-strong"
               >
                 Try it free

@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://tasksnapai-aui.vercel.app.git"
+    "url": "git+https://github.com/afaqulislam/tasksnap-ai.git"
   },
   "homepage": "https://tasksnapai-aui.vercel.app",
   "bugs": {
-    "url": "https://tasksnapai-aui.vercel.app/issues"
+    "url": "https://github.com/afaqulislam/tasksnap-ai/issues"
   },
   "keywords": [
     "nextjs",
@@ -28,13 +28,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.0",
     "lucide-react": "^1.31.0",
-    "next": "16.3.1",
+    "next": "^16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tailwind-merge": "^3.6.0",
@@ -47,8 +48,10 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.1",
+    "eslint-config-next": "^16.3.8",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
   }
 }

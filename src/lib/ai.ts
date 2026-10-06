@@ -1,5 +1,5 @@
-import { ALLOWED_IMAGE_MIME } from "./config";
-import type { Task } from "./types";
+import { ALLOWED_IMAGE_MIME, MAX_TEXT_LENGTH } from "./config";
+import type { AnalyzeInput, Task } from "./types";
 import { parseAnalyzeResponse } from "./validate";
 
 const SYSTEM_PROMPT = `You are TaskSnap AI, an intelligent task extraction assistant.
@@ -93,26 +93,12 @@ Return exactly:
 
 const ALLOWED_MIME = new Set<string>(ALLOWED_IMAGE_MIME);
 
-const MAX_OUTPUT_TOKENS = 1400;
-const REQUEST_TIMEOUT_MS = 40_000;
-const MAX_RETRY_AFTER_SECONDS = 20;
-
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function isAbortError(error: unknown): boolean {
-  return (error as { name?: string }).name === "AbortError";
-}
+const MAX_OUTPUT_TOKENS = 4000;
+const PER_CALL_TIMEOUT_MS = 40_000;
+// Route handlers run with `maxDuration = 60`; the whole chain shares a
+// budget so retries can never outlive the function.
+const TOTAL_BUDGET_MS = 55_000;
+const MAX_RETRY_AFTER_MS = 15_000;
 
 export class ApiError extends Error {
   constructor(
@@ -122,6 +108,36 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+/** Errors that must not trigger a provider fallback (retrying cannot help). */
+class FatalApiError extends ApiError {
+  constructor(message: string, status: number) {
+    super(message, status);
+    this.name = "FatalApiError";
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (error as { name?: string }).name === "AbortError";
 }
 
 function extractErrorMessage(body: string): string | null {
@@ -145,12 +161,12 @@ function parseRetryAfter(response: Response, body: string): number | null {
   const header = response.headers.get("Retry-After");
   if (header) {
     const seconds = Number(header);
-    if (Number.isFinite(seconds)) return seconds;
+    if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
   }
   const match = body.match(/try again in ([\d.]+)s/i);
   if (match) {
     const seconds = Number(match[1]);
-    if (Number.isFinite(seconds)) return seconds;
+    if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
   }
   return null;
 }
@@ -165,6 +181,22 @@ function getGroqKey(): string | null {
 
 function getGeminiKey(): string | null {
   return process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || null;
+}
+
+function groqModel(): string {
+  return (
+    process.env.GROQ_MODEL?.trim() ||
+    process.env.AI_MODEL?.trim() ||
+    "qwen/qwen3.8-27b"
+  );
+}
+
+function geminiModel(): string {
+  return (
+    process.env.GEMINI_MODEL?.trim() ||
+    process.env.AI_MODEL?.trim() ||
+    "gemini-2.0-flash"
+  );
 }
 
 export function hasAiConfiguration(): boolean {
@@ -200,8 +232,68 @@ function extractJson(text: string): unknown {
   }
 }
 
-function buildGroqBody(messages: Record<string, unknown>[]): Record<string, unknown> {
-  const model = process.env.AI_MODEL?.trim() || "qwen/qwen3.8-27b";
+const TRUNCATED_MESSAGE =
+  "This screenshot has too much text to analyze in one pass. Try a smaller or cropped screenshot.";
+
+/** Shown to users whenever analysis cannot run — never mentions config or env vars. */
+export const UNAVAILABLE_MESSAGE =
+  "Analysis isn't available right now. Please try again later.";
+
+function decodeCompletion(content: string, truncated: boolean): Task[] {
+  const tasks = parseAnalyzeResponse(extractJson(content));
+  if (!truncated) return tasks;
+  // A cut-off response may still contain complete task objects; keep them.
+  if (tasks.length > 0) return tasks;
+  throw new FatalApiError(TRUNCATED_MESSAGE, 422);
+}
+
+function remainingMs(deadline: number): number {
+  return deadline - Date.now();
+}
+
+function timedOut(): ApiError {
+  return new ApiError("The AI took too long to respond. Please try again.", 500);
+}
+
+function providerRejection(status: number): ApiError {
+  console.warn(`AI provider rejected the request with status ${status}.`);
+  return new ApiError(
+    "The AI couldn't process this screenshot. Please try again.",
+    status,
+  );
+}
+
+async function handleRetryableRateLimit(
+  response: Response,
+  attempt: number,
+  deadline: number,
+): Promise<boolean> {
+  if (response.status !== 429 || attempt >= 2) return false;
+  const bodyText = await response.text().catch(() => "");
+  const waitMs = parseRetryAfter(response, bodyText);
+  const fitsBudget =
+    waitMs !== null &&
+    waitMs <= MAX_RETRY_AFTER_MS &&
+    remainingMs(deadline) - waitMs > 5_000;
+  if (fitsBudget && waitMs !== null) {
+    await sleep(waitMs);
+    return true;
+  }
+  const message =
+    waitMs !== null
+      ? `AI is busy right now. Try again in ${Math.ceil(waitMs / 1000)}s.`
+      : "AI is busy right now. Wait a moment and try again.";
+  console.warn(
+    "AI provider rate limited:",
+    extractErrorMessage(bodyText) ?? `status ${response.status}`,
+  );
+  throw new ApiError(message, 429);
+}
+
+function buildGroqBody(
+  messages: Record<string, unknown>[],
+): Record<string, unknown> {
+  const model = groqModel();
   const body: Record<string, unknown> = {
     model,
     temperature: 0,
@@ -215,11 +307,19 @@ function buildGroqBody(messages: Record<string, unknown>[]): Record<string, unkn
   return body;
 }
 
-async function groqChat(body: Record<string, unknown>): Promise<Task[]> {
+async function groqChat(
+  messages: Record<string, unknown>[],
+  deadline: number,
+): Promise<Task[]> {
   const apiKey = getGroqKey();
-  if (!apiKey) throw new Error("Missing Groq API key");
+  if (!apiKey) throw new ApiError(UNAVAILABLE_MESSAGE, 500);
 
-  async function call(attempt: number): Promise<Task[]> {
+  const body = JSON.stringify(buildGroqBody(messages));
+
+  for (let attempt = 1; ; attempt += 1) {
+    const budget = remainingMs(deadline);
+    if (budget < 1_000) throw timedOut();
+
     let response: Response;
     try {
       response = await fetchWithTimeout(
@@ -230,62 +330,39 @@ async function groqChat(body: Record<string, unknown>): Promise<Task[]> {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
           },
-          body: JSON.stringify(body),
+          body,
         },
+        Math.min(PER_CALL_TIMEOUT_MS, budget),
       );
     } catch (error) {
-      if (isAbortError(error)) {
-        throw new ApiError("AI request timed out. Try again.", 500);
-      }
+      if (isAbortError(error)) throw timedOut();
       throw error;
     }
 
-    if (response.status === 429 && attempt < 2) {
-      const bodyText = await response.text().catch(() => "");
-      const retryAfter = parseRetryAfter(response, bodyText);
-      if (
-        retryAfter !== null &&
-        retryAfter <= MAX_RETRY_AFTER_SECONDS
-      ) {
-        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-        return call(attempt + 1);
-      }
-      const message =
-        retryAfter !== null
-          ? `AI is rate-limited. Try again in ${Math.ceil(retryAfter)}s.`
-          : (extractErrorMessage(bodyText) ??
-            "AI is rate-limited. Wait a moment and try again.");
-      throw new ApiError(message, 429);
-    }
+    if (await handleRetryableRateLimit(response, attempt, deadline)) continue;
 
     if (!response.ok) {
       const bodyText = await response.text().catch(() => "");
       console.error(`Groq API ${response.status}: ${bodyText.slice(0, 500)}`);
       if (response.status >= 400 && response.status < 500) {
-        throw new ApiError(
-          "AI provider rejected the request. Check your API key and model setting.",
-          response.status,
-        );
+        throw providerRejection(response.status);
       }
       throw new Error(`AI provider returned ${response.status}`);
     }
 
     const data = await response.json();
     const completion = data?.choices?.[0];
-    if (completion?.finish_reason === "length") {
-      console.warn("Groq output truncated (finish_reason=length); treating as no tasks.");
-      return [];
-    }
     const content: string = completion?.message?.content ?? "";
-    return parseAnalyzeResponse(extractJson(content));
+    return decodeCompletion(content, completion?.finish_reason === "length");
   }
-
-  return call(1);
 }
 
-async function analyzeWithGroqImage(dataUrl: string): Promise<Task[]> {
+async function analyzeWithGroqImage(
+  dataUrl: string,
+  deadline: number,
+): Promise<Task[]> {
   return groqChat(
-    buildGroqBody([
+    [
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
@@ -300,135 +377,189 @@ async function analyzeWithGroqImage(dataUrl: string): Promise<Task[]> {
           },
         ],
       },
-    ]),
+    ],
+    deadline,
   );
 }
 
-const MAX_TEXT_LENGTH = 8000;
-
-async function analyzeWithGroqText(text: string): Promise<Task[]> {
+async function analyzeWithGroqText(
+  text: string,
+  deadline: number,
+): Promise<Task[]> {
   const clipped = text.slice(0, MAX_TEXT_LENGTH);
   return groqChat(
-    buildGroqBody([
+    [
       { role: "system", content: SYSTEM_PROMPT_TEXT },
       {
         role: "user",
         content: `Text extracted from the screenshot:\n\n${clipped}\n\nExtract the actionable tasks. Return JSON only.`,
       },
-    ]),
+    ],
+    deadline,
   );
 }
 
-async function analyzeWithGemini(dataUrl: string): Promise<Task[]> {
-  const apiKey = getGeminiKey();
-  if (!apiKey) throw new Error("Missing Gemini API key");
-
-  const model = process.env.AI_MODEL?.trim() || "gemini-2.0-flash";
-  const mime = dataUrl.split(";")[0].split(":")[1] || "image/png";
-  const base64 = dataUrl.split(",")[1] || "";
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const body = JSON.stringify({
-    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+function geminiRequestBody(
+  parts: Record<string, unknown>[],
+  systemPrompt: string,
+): string {
+  return JSON.stringify({
+    systemInstruction: { parts: [{ text: systemPrompt }] },
     generationConfig: {
       responseMimeType: "application/json",
       temperature: 0,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
     },
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType: mime, data: base64 } },
-          { text: "Extract the actionable tasks from this screenshot." },
-        ],
-      },
-    ],
+    contents: [{ role: "user", parts }],
   });
+}
 
-  async function call(attempt: number): Promise<Task[]> {
+async function geminiGenerate(
+  body: string,
+  deadline: number,
+): Promise<{ truncated: boolean; content: string }> {
+  const apiKey = getGeminiKey();
+  if (!apiKey) throw new ApiError(UNAVAILABLE_MESSAGE, 500);
+
+  const model = geminiModel();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  for (let attempt = 1; ; attempt += 1) {
+    const budget = remainingMs(deadline);
+    if (budget < 1_000) throw timedOut();
+
     let response: Response;
     try {
-      response = await fetchWithTimeout(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
+      response = await fetchWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        },
+        Math.min(PER_CALL_TIMEOUT_MS, budget),
+      );
     } catch (error) {
-      if (isAbortError(error)) {
-        throw new ApiError("AI request timed out. Try again.", 500);
-      }
+      if (isAbortError(error)) throw timedOut();
       throw error;
     }
 
-    if (response.status === 429 && attempt < 2) {
-      const retryAfter = Number(response.headers.get("Retry-After"));
-      if (Number.isFinite(retryAfter) && retryAfter <= MAX_RETRY_AFTER_SECONDS) {
-        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-        return call(attempt + 1);
-      }
-      throw new ApiError("AI is rate-limited. Wait a moment and try again.", 429);
-    }
+    if (await handleRetryableRateLimit(response, attempt, deadline)) continue;
 
     if (!response.ok) {
       const bodyText = await response.text().catch(() => "");
       console.error(`Gemini API ${response.status}: ${bodyText.slice(0, 500)}`);
+      if (response.status >= 400 && response.status < 500) {
+        throw providerRejection(response.status);
+      }
       throw new Error(`AI provider returned ${response.status}`);
     }
 
     const data = await response.json();
-    const content: string =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    return parseAnalyzeResponse(extractJson(content));
+    const candidate = data?.candidates?.[0];
+    const content: string = candidate?.content?.parts?.[0]?.text ?? "";
+    return {
+      content,
+      truncated: candidate?.finishReason === "MAX_TOKENS",
+    };
   }
-
-  return call(1);
 }
 
-interface AnalyzeInput {
-  text?: string;
-  image?: string;
+async function analyzeWithGeminiImage(
+  dataUrl: string,
+  deadline: number,
+): Promise<Task[]> {
+  const mime = dataUrl.split(";")[0].split(":")[1] || "image/png";
+  const base64 = dataUrl.split(",")[1] || "";
+  const { content, truncated } = await geminiGenerate(
+    geminiRequestBody(
+      [
+        { inlineData: { mimeType: mime, data: base64 } },
+        { text: "Extract the actionable tasks from this screenshot." },
+      ],
+      SYSTEM_PROMPT,
+    ),
+    deadline,
+  );
+  return decodeCompletion(content, truncated);
 }
 
-function runFallbackChain(fns: Array<() => Promise<Task[]>>): Promise<Task[]> {
-  let lastError: unknown;
-  const run = (index: number): Promise<Task[]> => {
-    if (index >= fns.length) return Promise.reject(lastError);
-    return fns[index]().catch((error: unknown) => {
-      lastError = error;
-      return run(index + 1);
-    });
-  };
-  return run(0);
+async function analyzeWithGeminiText(
+  text: string,
+  deadline: number,
+): Promise<Task[]> {
+  const clipped = text.slice(0, MAX_TEXT_LENGTH);
+  const { content, truncated } = await geminiGenerate(
+    geminiRequestBody(
+      [
+        {
+          text: `Text extracted from the screenshot:\n\n${clipped}\n\nExtract the actionable tasks. Return JSON only.`,
+        },
+      ],
+      SYSTEM_PROMPT_TEXT,
+    ),
+    deadline,
+  );
+  return decodeCompletion(content, truncated);
+}
+
+interface Provider {
+  text?: (text: string, deadline: number) => Promise<Task[]>;
+  image?: (image: string, deadline: number) => Promise<Task[]>;
 }
 
 export async function extractTasksFromInput(
   input: AnalyzeInput,
 ): Promise<Task[]> {
-  const trimmedText = input.text?.trim();
+  const text = input.text?.trim() || undefined;
   const image = input.image;
-  const hasGroq = Boolean(getGroqKey());
-  const hasGemini = Boolean(getGeminiKey());
 
-  if (trimmedText && hasGroq) {
-    const fromText = await runFallbackChain([
-      () => analyzeWithGroqText(trimmedText),
-      ...(image && hasGemini ? [() => analyzeWithGemini(image)] : []),
-    ]);
-    if (fromText.length > 0 || !image) return fromText;
-    return runFallbackChain([
-      () => analyzeWithGroqImage(image),
-      ...(hasGemini ? [() => analyzeWithGemini(image)] : []),
-    ]);
+  const providers: Provider[] = [];
+  if (getGroqKey()) {
+    providers.push({
+      text: analyzeWithGroqText,
+      image: analyzeWithGroqImage,
+    });
+  }
+  if (getGeminiKey()) {
+    providers.push({
+      text: analyzeWithGeminiText,
+      image: analyzeWithGeminiImage,
+    });
+  }
+  if (providers.length === 0) {
+    throw new ApiError(UNAVAILABLE_MESSAGE, 503);
   }
 
-  if (image) {
-    return runFallbackChain([
-      ...(hasGroq ? [() => analyzeWithGroqImage(image)] : []),
-      ...(hasGemini ? [() => analyzeWithGemini(image)] : []),
-    ]);
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  let lastError: unknown = null;
+
+  for (const provider of providers) {
+    if (text && provider.text) {
+      try {
+        const tasks = await provider.text(text, deadline);
+        // Text is cheaper than vision; only send the image when it found
+        // nothing and the caller actually supplied one.
+        if (tasks.length > 0 || !image || !provider.image) return tasks;
+      } catch (error) {
+        if (error instanceof FatalApiError) throw error;
+        lastError = error;
+        continue;
+      }
+    }
+
+    if (image && provider.image) {
+      try {
+        return await provider.image(image, deadline);
+      } catch (error) {
+        if (error instanceof FatalApiError) throw error;
+        lastError = error;
+      }
+    }
   }
 
-  throw new Error("No AI provider configured");
+  if (lastError) throw lastError;
+  throw new ApiError(UNAVAILABLE_MESSAGE, 503);
 }
 
 export function demoTasks(): Task[] {

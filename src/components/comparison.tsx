@@ -1,6 +1,5 @@
 import { Fragment } from "react";
 import { Check, CircleX, Scale } from "lucide-react";
-import { cn } from "@/lib/cn";
 
 const ROWS = [
   {
@@ -15,8 +14,8 @@ const ROWS = [
   },
   {
     label: "Your screenshot",
-    manual: "Sent to a third-party service",
-    tasksnap: "Read on your device, never uploaded",
+    manual: "Uploaded whole, before anyone reads it",
+    tasksnap: "Read in your browser — only text is sent onward",
   },
   {
     label: "Prioritization",
@@ -106,11 +105,7 @@ export function Comparison() {
           {ROWS.map((row) => (
             <Fragment key={row.label}>
               <div className="bg-card px-5 py-4 font-medium">{row.label}</div>
-              <div
-                className={cn(
-                  "flex items-start gap-2 bg-card px-5 py-4 text-muted",
-                )}
-              >
+              <div className="flex items-start gap-2 bg-card px-5 py-4 text-muted">
                 <CircleX
                   className="mt-0.5 size-4 shrink-0 text-muted/70"
                   aria-hidden

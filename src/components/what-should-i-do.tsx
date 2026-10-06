@@ -46,7 +46,7 @@ export function WhatShouldIDo({ tasks, completed }: WhatShouldIDoProps) {
         >
           <span
             className={cn(
-              "font-medium capitalize",
+              "font-medium",
               priorityTextClass(top.priority),
             )}
           >

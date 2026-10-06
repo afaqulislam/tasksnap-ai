@@ -3,8 +3,6 @@ import { GITHUB_REPO } from "@/lib/config";
 
 const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}`;
 
-export const revalidate = 3600;
-
 export async function GET() {
   try {
     const response = await fetch(GITHUB_API, {

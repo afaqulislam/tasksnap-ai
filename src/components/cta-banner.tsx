@@ -28,7 +28,7 @@ export function CtaBanner({ onUploadClick }: CtaBannerProps) {
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted sm:text-base">
           Open it, snap it, and start from a real list. No account, no install,
-          and the screenshot never leaves your device for reading.
+          and the screenshot is read on your device.
         </p>
         <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
           <motion.button
