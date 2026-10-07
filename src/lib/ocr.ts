@@ -25,6 +25,10 @@ function getWorker(): Promise<Worker> {
         configuredLangs.length > 1 ||
         configuredLangs[0] !== DEFAULT_LANG
       ) {
+        console.warn(
+          `OCR: couldn't load configured languages (${configuredLangs.join(", ")}) — falling back to English.`,
+          error,
+        );
         return createWorkerFor([DEFAULT_LANG]).catch(() => {
           workerPromise = null;
           throw error;

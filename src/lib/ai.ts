@@ -244,6 +244,12 @@ export const UNAVAILABLE_MESSAGE =
   "Analysis isn't available right now. Please try again later.";
 
 function decodeCompletion(content: string, truncated: boolean): Task[] {
+  if (content.trim() === "") {
+    // A 2xx with no output at all is a silent provider failure, not a valid
+    // "no tasks" answer. Fail softly so the fallback provider gets a chance
+    // instead of surfacing a false negative to the user.
+    throw new ApiError("The AI returned an empty response. Please try again.", 502);
+  }
   const tasks = parseAnalyzeResponse(extractJson(content));
   if (!truncated) return tasks;
   // A cut-off response may still contain complete task objects; keep them.

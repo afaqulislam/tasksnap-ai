@@ -60,6 +60,37 @@ describe("parseDeadlineToTimestamp", () => {
     );
   });
 
+  it("rejects impossible dates instead of rolling them over", () => {
+    expect(parseDeadlineToTimestamp("2026-13-45", NOW)).toBeNull();
+    expect(parseDeadlineToTimestamp("2026-13-01", NOW)).toBeNull();
+    expect(parseDeadlineToTimestamp("2026-02-30", NOW)).toBeNull();
+    expect(parseDeadlineToTimestamp("2026-04-31", NOW)).toBeNull();
+    expect(parseDeadlineToTimestamp("2026-00-10", NOW)).toBeNull();
+    expect(parseDeadlineToTimestamp("2026-10-00", NOW)).toBeNull();
+  });
+
+  it("clamps 'in N months' to the last day of the target month", () => {
+    // 31 October + 1 month: November has 30 days.
+    expect(
+      parseDeadlineToTimestamp("in 1 month", new Date(2026, 9, 31, 9, 0, 0)),
+    ).toBe(new Date(2026, 10, 30, 23, 59, 0, 0).getTime());
+    // 31 January + 2 months → 31 March.
+    expect(
+      parseDeadlineToTimestamp("in 2 months", new Date(2026, 0, 31, 9, 0, 0)),
+    ).toBe(new Date(2026, 2, 31, 23, 59, 0, 0).getTime());
+    // 31 May + 1 month → 30 June.
+    expect(
+      parseDeadlineToTimestamp("in 1 month", new Date(2026, 4, 31, 9, 0, 0)),
+    ).toBe(new Date(2026, 5, 30, 23, 59, 0, 0).getTime());
+  });
+
+  it("keeps month offsets that do not overflow", () => {
+    // Control: 6 October + 1 month → 6 November.
+    expect(parseDeadlineToTimestamp("in 1 month", NOW)).toBe(
+      new Date(2026, 10, 6, 23, 59, 0, 0).getTime(),
+    );
+  });
+
   it("rolls year-less dates forward instead of using a past year", () => {
     // 5 March is already behind us in October 2026.
     expect(parseDeadlineToTimestamp("Mar 5", NOW)).toBe(

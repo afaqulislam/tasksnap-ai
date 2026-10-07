@@ -163,7 +163,17 @@ function extractDate(normalized: string, now: Date): DateHint | null {
     }
     if (unit.startsWith("month")) {
       const date = new Date(today);
+      const targetDay = date.getDate();
+      // setMonth() past the target month's last day rolls into the next
+      // month ("31 January" + 1 → "3 March"); anchor on the 1st and clamp.
+      date.setDate(1);
       date.setMonth(date.getMonth() + amount);
+      const lastDay = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        0,
+      ).getDate();
+      date.setDate(Math.min(targetDay, lastDay));
       return { date, relative: true, exactTime: false };
     }
     return { date: addDays(today, amount), relative: true, exactTime: false };
@@ -186,8 +196,22 @@ function extractDate(normalized: string, now: Date): DateHint | null {
 
   const iso = normalized.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
   if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const date = new Date(year, month - 1, day);
+    // new Date silently overflows impossible dates ("2026-02-30" becomes
+    // March 2); only accept components that round-trip cleanly.
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return null;
+    }
     return {
-      date: new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])),
+      date,
       relative: false,
       exactTime: false,
     };
