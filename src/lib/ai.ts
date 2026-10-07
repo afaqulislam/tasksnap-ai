@@ -100,6 +100,10 @@ const PER_CALL_TIMEOUT_MS = 40_000;
 const TOTAL_BUDGET_MS = 55_000;
 const MAX_RETRY_AFTER_MS = 15_000;
 
+// Model fallbacks when neither GROQ_MODEL nor AI_MODEL is set.
+const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b";
+const DEFAULT_GEMINI_MODEL = "gemini-2.0-flash";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -187,7 +191,7 @@ function groqModel(): string {
   return (
     process.env.GROQ_MODEL?.trim() ||
     process.env.AI_MODEL?.trim() ||
-    "qwen/qwen3.8-27b"
+    DEFAULT_GROQ_MODEL
   );
 }
 
@@ -195,7 +199,7 @@ function geminiModel(): string {
   return (
     process.env.GEMINI_MODEL?.trim() ||
     process.env.AI_MODEL?.trim() ||
-    "gemini-2.0-flash"
+    DEFAULT_GEMINI_MODEL
   );
 }
 

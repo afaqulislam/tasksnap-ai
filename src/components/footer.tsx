@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { LinkedinIcon, XIcon } from "./brand-icons";
-import { GITHUB_URL } from "@/lib/config";
+import { GITHUB_URL, LINKEDIN_URL, X_URL } from "@/lib/config";
 
 const SOCIAL_LINKS = [
   {
     label: "LinkedIn",
-    href: "https://www.linkedin.com/in/afaqulislam",
+    href: LINKEDIN_URL,
     Icon: LinkedinIcon,
   },
   {
     label: "X (Twitter)",
-    href: "https://x.com/afaqulislam708",
+    href: X_URL,
     Icon: XIcon,
   },
 ];

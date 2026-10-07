@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { SITE_URL, X_HANDLE } from "@/lib/config";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +22,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tasksnapai-aui.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "TaskSnap AI — Turn messy messages into actionable tasks",
     template: "%s · TaskSnap AI",
@@ -52,14 +53,14 @@ export const metadata: Metadata = {
       "Upload a screenshot. Text is read locally in your browser, then AI extracts tasks, deadlines, priorities, and assignees.",
     type: "website",
     siteName: "TaskSnap AI",
-    url: "https://tasksnapai-aui.vercel.app",
+    url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
     title: "TaskSnap AI — Turn messy messages into actionable tasks",
     description:
       "Upload a screenshot from WhatsApp, email, Discord, or any announcement. In-browser OCR plus AI turns it into a prioritized task list.",
-    site: "@afaqulislam708",
+    site: `@${X_HANDLE}`,
   },
 };
 

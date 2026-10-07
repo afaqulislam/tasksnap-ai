@@ -1,5 +1,8 @@
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 10;
+import {
+  RATE_LIMIT_MAX_REQUESTS,
+  RATE_LIMIT_WINDOW_MS,
+} from "./config";
+
 const MAX_TRACKED_IPS = 500;
 const PRUNE_EVERY_OP = 64;
 
@@ -18,7 +21,7 @@ function isValidIp(value: string): boolean {
 }
 
 function pruneExpired(now: number): void {
-  const windowStart = now - WINDOW_MS;
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
   for (const [key, values] of hits) {
     if (values.every((t) => t <= windowStart)) hits.delete(key);
   }
@@ -50,16 +53,16 @@ export function getClientIp(request: Request): string {
 }
 
 export function checkRateLimit(ip: string, now = Date.now()): RateLimitResult {
-  const windowStart = now - WINDOW_MS;
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
   const timestamps = (hits.get(ip) ?? []).filter((t) => t > windowStart);
 
-  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+  if (timestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
     const oldest = timestamps[0] ?? now;
     return {
       ok: false,
       retryAfterSeconds: Math.max(
         1,
-        Math.ceil((oldest + WINDOW_MS - now) / 1000),
+        Math.ceil((oldest + RATE_LIMIT_WINDOW_MS - now) / 1000),
       ),
     };
   }
@@ -91,6 +94,6 @@ export function refundRateLimit(ip: string, now = Date.now()): void {
   const timestamps = hits.get(ip);
   if (!timestamps || timestamps.length === 0) return;
   const last = timestamps[timestamps.length - 1];
-  if (last !== undefined && last > now - WINDOW_MS) timestamps.pop();
+  if (last !== undefined && last > now - RATE_LIMIT_WINDOW_MS) timestamps.pop();
   if (timestamps.length === 0) hits.delete(ip);
 }

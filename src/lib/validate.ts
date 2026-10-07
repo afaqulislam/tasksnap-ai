@@ -2,6 +2,11 @@ import type { Priority, Task } from "./types";
 
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
 
+// Hard caps so a hostile/odd model response can't bloat stored tasks.
+const MAX_TITLE_LENGTH = 140;
+const MAX_DESCRIPTION_LENGTH = 300;
+const MAX_SHORT_TEXT_LENGTH = 80;
+
 function isPriority(value: unknown): value is Priority {
   return typeof value === "string" && PRIORITIES.includes(value as Priority);
 }
@@ -27,11 +32,11 @@ function parseTask(raw: unknown): Task | null {
   const priority = isPriority(record.priority) ? record.priority : "medium";
 
   return {
-    title: title.slice(0, 140),
-    description: cleanText(record.description).slice(0, 300),
-    deadline: cleanOptionalText(record.deadline)?.slice(0, 80) ?? null,
+    title: title.slice(0, MAX_TITLE_LENGTH),
+    description: cleanText(record.description).slice(0, MAX_DESCRIPTION_LENGTH),
+    deadline: cleanOptionalText(record.deadline)?.slice(0, MAX_SHORT_TEXT_LENGTH) ?? null,
     priority,
-    assignee: cleanOptionalText(record.assignee)?.slice(0, 80) ?? null,
+    assignee: cleanOptionalText(record.assignee)?.slice(0, MAX_SHORT_TEXT_LENGTH) ?? null,
   };
 }
 

@@ -3,11 +3,14 @@ import { GITHUB_REPO } from "@/lib/config";
 
 const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}`;
 
+// Cached at the edge for an hour — the star count changes slowly.
+const STAR_CACHE_SECONDS = 3600;
+
 export async function GET() {
   try {
     const response = await fetch(GITHUB_API, {
       headers: { "User-Agent": "tasksnap-ai", Accept: "application/vnd.github+json" },
-      next: { revalidate: 3600 },
+      next: { revalidate: STAR_CACHE_SECONDS },
     });
     if (!response.ok) {
       return NextResponse.json({ stars: null });
