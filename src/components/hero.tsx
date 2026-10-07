@@ -12,7 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { GithubIcon } from "./brand-icons";
-import { GITHUB_URL, MAX_IMAGE_MB } from "@/lib/config";
+import { GITHUB_URL } from "@/lib/config";
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
@@ -36,7 +36,7 @@ const STATS = [
   { value: "3", label: "steps, start to checklist" },
   { value: "2", label: "AI providers, automatic fallback" },
   { value: "100+", label: "OCR languages supported" },
-  { value: `${MAX_IMAGE_MB} MB`, label: "max screenshot size" },
+  { value: "8 MB", label: "max screenshot size" },
 ];
 
 interface HeroProps {

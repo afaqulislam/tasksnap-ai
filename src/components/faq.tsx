@@ -4,12 +4,6 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
-import {
-  MAX_IMAGE_DIMENSION,
-  MAX_IMAGE_MB,
-  RATE_LIMIT_MAX_REQUESTS,
-  RATE_LIMIT_WINDOW_MINUTES,
-} from "@/lib/config";
 
 const FAQS = [
   {
@@ -35,7 +29,7 @@ const FAQS = [
   {
     id: "formats",
     q: "What image formats are supported?",
-    a: `PNG, JPG, JPEG, and WEBP, up to ${MAX_IMAGE_MB} MB. Screenshots are auto-resized to a maximum of ${MAX_IMAGE_DIMENSION}px before analysis to keep things fast and token-friendly.`,
+    a: "PNG, JPG, JPEG, and WEBP, up to 8 MB. Screenshots are auto-resized to a maximum of 1024px before analysis to keep things fast and token-friendly.",
   },
   {
     id: "accuracy",
@@ -50,7 +44,7 @@ const FAQS = [
   {
     id: "limits",
     q: "How many screenshots can I analyze?",
-    a: `Enough to cover a busy day of group chats. To keep things fair for everyone on the free AI tier, each IP address gets ${RATE_LIMIT_MAX_REQUESTS} analyses per ${RATE_LIMIT_WINDOW_MINUTES}-minute window — if you hit it, the app tells you exactly how long to wait.`,
+    a: "Enough to cover a busy day of group chats. To keep things fair for everyone on the free AI tier, each IP address gets 10 analyses per 10-minute window — if you hit it, the app tells you exactly how long to wait.",
   },
   {
     id: "api-key",

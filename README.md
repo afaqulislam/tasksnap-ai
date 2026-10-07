@@ -43,7 +43,7 @@ One theme is dropped. You build — an app, a game, a landing page, a bot, an au
 | 🔎 In-browser OCR | Text is read locally with [Tesseract.js](https://github.com/naptha/tesseract.js) — private and zero API tokens. Any language Tesseract supports (`NEXT_PUBLIC_OCR_LANGS`). |
 | 🧠 AI extraction | Turns the extracted text into tasks, deadlines, priorities, and assignees (the image is sent only when OCR can't read the screenshot). |
 | ⚡ Smart optimization | Images are auto-resized (max 1024px) and only text reaches the AI — fast and token-friendly. |
-| 🔒 Private by default | Reading happens in your browser; only extracted text is sent to the AI provider. Nothing is stored. |
+| 🔒 Private by default | Reading happens in your browser; only extracted text is sent to the AI provider. No screenshots, text, or tasks are ever stored — the only server-side state is an in-memory per-IP rate-limit counter that expires with the 10-minute window. |
 | 🚦 Fair usage limits | Per-IP rate limiting (10 analyses / 10 min) keeps the free AI tier usable for everyone. |
 | 🎯 Urgency Radar | Highlights the highest-priority task — earliest deadline wins within a priority. Deadlines are understood in plain English ("Friday", "tomorrow at 4 PM", "in 3 days", "2026-10-10"). |
 | 💡 What should I do now? | Recommends the next task to start, so you're never guessing. |
@@ -97,7 +97,7 @@ The interesting part of this project isn't the extraction — it's everything th
 
 ```
 tsx ███████████░░░░░░░░░  TypeScript + JSX  56%
-ts  ████████░░░░░░░░░░░░  TypeScript        40%
+ts  ████████░░░░░░░░░░░░  TypeScript        41%
 css █░░░░░░░░░░░░░░░░░░░  CSS + Tailwind     3%
 svg ░░░░░░░░░░░░░░░░░░░░  Icons             <1%
 ```
@@ -106,7 +106,7 @@ svg ░░░░░░░░░░░░░░░░░░░░  Icons         
 
 ### Prerequisites
 
-- **Node.js ≥ 20.9** (required by Next.js 16)
+- **Node.js ≥ 22.12** — Next.js 16 itself only needs ≥ 20.9, but `npm test` (Vitest 5) requires ≥ 22.12. CI runs on Node 22.
 - A [Groq](https://console.groq.com/keys) API key (optional — set `DEMO_MODE=true` to run without one)
 
 ### Installation
@@ -173,7 +173,7 @@ src/
 └── lib/
     ├── ai.ts                 # Groq + Gemini providers, prompts, fallback chain
     ├── cn.ts                 # class name utility (clsx + tailwind-merge)
-    ├── config.ts             # Repo links, upload limits, shared constants
+    ├── config.ts             # Site/repo links, upload & rate-limit constants
     ├── deadline.ts           # Plain-English deadline → timestamp parser
     ├── ocr.ts                # Tesseract worker, OCR sanity check
     ├── priority.ts           # Urgency ranking, deadline ordering
@@ -201,7 +201,7 @@ curl -X POST https://<your-domain>/api/analyze \
   -d '{"image": "data:image/png;base64,..."}'
 ```
 
-> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Request bodies are capped at 12 MB before they are parsed. Requests are throttled per IP — 10 per 10 minutes on a sliding window, keyed on the last (`x-forwarded-for`) hop — and return `429` with a `Retry-After` header when exceeded. Groq's own free tier is also rate-limited (e.g. 8000 TPM); the API retries automatically once for short waits that still fit its 55s budget, falls back to Gemini when its key is configured, and otherwise surfaces a readable `429` message.
+> **Note:** Images are auto-resized to a max dimension of 1024px before being sent to the AI provider to minimize token usage. Request bodies are capped at 12 MB before they are parsed. Requests are throttled per IP — 10 per 10 minutes on a sliding window, keyed on the last (`x-forwarded-for`) hop — and return `429` with a `Retry-After` header when exceeded. Groq's own free tier is also rate-limited (short token-per-minute windows); the API retries automatically once for short waits that still fit its 55s budget, falls back to Gemini when its key is configured, and otherwise surfaces a readable `429` message.
 
 **Status codes:**
 
@@ -257,6 +257,7 @@ Returns the repository's current star count (cached for 1 hour to avoid rate lim
 3. Add environment variables under **Project → Settings → Environment Variables**:
    - `GROQ_API_KEY` — your Groq key
    - `GROQ_MODEL` — optional Groq model override
+   - `GEMINI_MODEL` — optional Gemini model override
    - `GOOGLE_GENERATIVE_AI_API_KEY` — optional Gemini backup provider
    - `NEXT_PUBLIC_OCR_LANGS` — optional, e.g. `eng,urd`
    - `DEMO_MODE` — `false` (leaving it off also means `503` when no key is set)

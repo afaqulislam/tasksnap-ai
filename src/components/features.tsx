@@ -1,11 +1,10 @@
 import { Brain, CalendarClock, ImagePlus, ScanText, ShieldCheck, Target } from "lucide-react";
-import { MAX_IMAGE_MB } from "@/lib/config";
 
 const FEATURES = [
   {
     Icon: ImagePlus,
     title: "Screenshot upload",
-    text: `Drag-and-drop or browse for images — PNG, JPG, JPEG, or WEBP, up to ${MAX_IMAGE_MB} MB.`,
+    text: "Drag-and-drop or browse for images — PNG, JPG, JPEG, or WEBP, up to 8 MB.",
   },
   {
     Icon: ScanText,
