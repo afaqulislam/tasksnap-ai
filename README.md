@@ -69,10 +69,11 @@ The interesting part of this project isn't the extraction — it's everything th
 | --- | --- |
 | AI provider outage or rate limit | Automatic fallback chain — Groq → Gemini — plus one retry for short `Retry-After` waits that still fit the request budget. |
 | Hanging requests | Every provider call has a 40s timeout inside a 55s budget shared by the whole chain, and failures return a readable message instead of spinning forever. |
-| Garbled OCR output | Text under 40 characters or under 30% readable characters is discarded and the image path is used instead. |
+| Garbled OCR output | Text under 40 characters or with under 30% letters (any script — including Urdu, Arabic, and CJK) is discarded and the image path is used instead. |
 | Truncated AI responses | `max_tokens` is 4000; cut-off responses keep any complete tasks they contain, and otherwise return a clear "too much text" error rather than a false "no tasks". |
 | Double submits | The client guards concurrent analysis, so one click can't burn two API calls. |
 | Slow first OCR load | OCR has a 45s budget, then the image fallback takes over. |
+| Long waits | The client caps each analysis at 70s and offers a Cancel button that returns you to your screenshot anytime — nothing hangs forever. |
 | Malformed or oversized uploads | Empty files, unsupported types, invalid data URLs, >8 MB images, and >12 MB request bodies are rejected with a `4xx` before any AI call. |
 | Abuse and spam | Sliding-window rate limiting keyed on the last (proxy-appended) `x-forwarded-for` hop — 10 requests / 10 minutes. Provider `429`s and unexpected `5xx` failures refund the slot; demo responses skip it entirely. |
 | No AI key configured | `503` with an actionable message, or clearly labeled sample data when `DEMO_MODE=true`. |
@@ -90,7 +91,7 @@ The interesting part of this project isn't the extraction — it's everything th
 | OCR | [Tesseract.js](https://github.com/naptha/tesseract.js) — runs in the browser, zero API tokens |
 | AI — fallback | <img src="https://cdn.simpleicons.org/googlegemini/8E75B2" height="14" alt="Google Gemini" /> Google Gemini — used automatically when Groq is missing or errors |
 | Demo fallback | Built-in sample results when `DEMO_MODE=true` and no AI key is set |
-| Testing | Vitest — deadline parsing, response validation, urgency ranking, rate limiting |
+| Testing | Vitest — deadline parsing, response validation, urgency ranking, rate limiting, OCR sanity gate |
 | Quality | GitHub Actions CI — ESLint, `tsc --noEmit`, Vitest, and `next build` on every push |
 
 ### Code distribution
@@ -180,7 +181,7 @@ src/
     ├── rate-limit.ts         # Sliding-window per-IP limiter
     ├── validate.ts           # Task response parsing & sanitising
     ├── types.ts              # Shared types
-    └── *.test.ts             # Unit tests for deadline, validate, priority, rate-limit
+    └── *.test.ts             # Unit tests for deadline, validate, priority, rate-limit, OCR sanity
 ```
 
 ## 🧪 API Reference

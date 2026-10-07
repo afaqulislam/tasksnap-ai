@@ -39,7 +39,7 @@ const FAQS = [
   {
     id: "failures",
     q: "What happens if something goes wrong?",
-    a: "Every AI request has a timeout, so nothing hangs forever. If Groq is unavailable or rate-limited, TaskSnap automatically retries the Gemini provider when its key is configured — and if neither is available the app shows a clear message instead of failing silently.",
+    a: "Every AI request has a timeout, so nothing hangs forever — and you can cancel and start over anytime. If Groq is unavailable or rate-limited, TaskSnap automatically retries the Gemini provider when its key is configured — and if neither is available the app shows a clear message instead of failing silently.",
   },
   {
     id: "limits",
