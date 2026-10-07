@@ -48,9 +48,13 @@ export async function extractTextFromImage(
   return normalizeText(data.text ?? "");
 }
 
+// \p{L} matches any letter in any script, so Urdu/Arabic/CJK screenshots
+// clear the gate instead of being treated as OCR garbage.
+const LETTER_PATTERN = /\p{L}/gu;
+
 export function isMeaningfulOcrText(text: string): boolean {
   const trimmed = text.trim();
   if (trimmed.length < MIN_TEXT_LENGTH) return false;
-  const alphaCount = (trimmed.match(/[A-Za-z]/g) ?? []).length;
-  return alphaCount / trimmed.length >= MIN_ALPHA_RATIO;
+  const letterCount = trimmed.match(LETTER_PATTERN)?.length ?? 0;
+  return letterCount / trimmed.length >= MIN_ALPHA_RATIO;
 }

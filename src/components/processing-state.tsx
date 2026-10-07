@@ -10,7 +10,7 @@ const STEPS = [
   "Prioritizing tasks",
 ];
 
-export function ProcessingState() {
+export function ProcessingState({ onCancel }: { onCancel: () => void }) {
   return (
     <div
       role="status"
@@ -61,6 +61,15 @@ export function ProcessingState() {
         <p className="mt-3 text-center text-xs text-muted">
           AI is working...
         </p>
+      </div>
+      <div className="mt-6 text-center">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex h-9 items-center rounded-full border border-edge bg-surface px-4 text-xs font-medium text-muted transition hover:text-foreground"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );

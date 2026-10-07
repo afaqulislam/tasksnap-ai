@@ -74,7 +74,7 @@ The interesting part of this project isn't the extraction — it's everything th
 | Double submits | The client guards concurrent analysis, so one click can't burn two API calls. |
 | Slow first OCR load | OCR has a 45s budget, then the image fallback takes over. |
 | Malformed or oversized uploads | Empty files, unsupported types, invalid data URLs, >8 MB images, and >12 MB request bodies are rejected with a `4xx` before any AI call. |
-| Abuse and spam | Sliding-window rate limiting keyed on the last (proxy-appended) `x-forwarded-for` hop — 10 requests / 10 minutes. Unexpected `5xx` failures refund the slot; demo responses skip it entirely. |
+| Abuse and spam | Sliding-window rate limiting keyed on the last (proxy-appended) `x-forwarded-for` hop — 10 requests / 10 minutes. Provider `429`s and unexpected `5xx` failures refund the slot; demo responses skip it entirely. |
 | No AI key configured | `503` with an actionable message, or clearly labeled sample data when `DEMO_MODE=true`. |
 | Provider errors in the UI | Meaningful, non-technical error messages instead of raw provider payloads. |
 

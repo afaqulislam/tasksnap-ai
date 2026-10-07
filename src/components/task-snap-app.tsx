@@ -38,6 +38,14 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 const OCR_TIMEOUT_MS = 45_000;
+const FETCH_TIMEOUT_MS = 70_000;
+
+class CancelledError extends Error {
+  constructor() {
+    super("Cancelled");
+    this.name = "CancelledError";
+  }
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -75,12 +83,22 @@ async function prepareImageDataUrl(file: File): Promise<string> {
       canvas.width = Math.max(1, Math.round(width * scale));
       canvas.height = Math.max(1, Math.round(height * scale));
       const ctx = canvas.getContext("2d");
+      const fail = () =>
+        reject(
+          new Error("Unable to process this image. Please try a different screenshot."),
+        );
       if (!ctx) {
-        reject(new Error("Unable to convert image"));
+        fail();
         return;
       }
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/png"));
+      try {
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      } catch {
+        // Oversized/corrupt pixels can make canvas rendering throw; a
+        // rejected promise keeps the UI out of the processing phase for good.
+        fail();
+      }
     };
     image.onerror = () => reject(new Error("Unable to read image"));
     image.src = raw;
@@ -99,6 +117,8 @@ export function TaskSnapApp() {
   const uploadRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const cancelRejectRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     return () => {
@@ -159,10 +179,28 @@ export function TaskSnapApp() {
     scrollToUpload();
   }
 
+  function handleCancel() {
+    if (!isSubmittingRef.current) return;
+    cancelRejectRef.current?.();
+    abortRef.current?.abort();
+  }
+
   async function handleSubmit() {
     if (!file || !previewUrl || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setPhase("processing");
+    setError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let triggerCancel = () => {};
+    const cancelled = new Promise<never>((_, reject) => {
+      triggerCancel = () => reject(new CancelledError());
+    });
+    cancelled.catch(() => {});
+    cancelRejectRef.current = triggerCancel;
+    let fetchTimeout: ReturnType<typeof setTimeout> | undefined;
+
     try {
       const dataUrl = await prepareImageDataUrl(file);
       let text = "";
@@ -170,12 +208,13 @@ export function TaskSnapApp() {
         const { extractTextFromImage, isMeaningfulOcrText } = await import(
           "@/lib/ocr"
         );
-        const extracted = await withTimeout(
-          extractTextFromImage(dataUrl),
-          OCR_TIMEOUT_MS,
-        );
+        const extracted = await Promise.race([
+          withTimeout(extractTextFromImage(dataUrl), OCR_TIMEOUT_MS),
+          cancelled,
+        ]);
         if (isMeaningfulOcrText(extracted)) text = extracted.trim();
-      } catch {
+      } catch (ocrError) {
+        if (ocrError instanceof CancelledError) throw ocrError;
         // OCR failed or timed out; fall back to the image path
       }
       // Only the extracted text travels when OCR succeeded; the image is
@@ -183,11 +222,19 @@ export function TaskSnapApp() {
       const body: Record<string, unknown> = text
         ? { text }
         : { image: dataUrl };
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      fetchTimeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      const response = await Promise.race([
+        fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        }),
+        cancelled,
+      ]);
+      // Stop the timeout before reading the body so a slow read isn't
+      // mistaken for a timeout after the response already arrived.
+      clearTimeout(fetchTimeout);
       if (!response.ok) {
         let message = "Analysis failed. Please try again.";
         try {
@@ -212,13 +259,27 @@ export function TaskSnapApp() {
       setIsDemo(demo);
       setPhase("done");
     } catch (error) {
-      setError(
-        error instanceof Error && error.message.length > 0
-          ? error.message
-          : "Unable to analyze the screenshot",
-      );
-      setPhase("error");
+      if (error instanceof CancelledError) {
+        setPhase("selected");
+        setError(null);
+      } else if (controller.signal.aborted) {
+        setError("Analysis timed out. Please try again.");
+        setPhase("error");
+      } else if (error instanceof TypeError) {
+        setError("Network error. Please check your connection and try again.");
+        setPhase("error");
+      } else {
+        setError(
+          error instanceof Error && error.message.length > 0
+            ? error.message
+            : "Unable to analyze the screenshot",
+        );
+        setPhase("error");
+      }
     } finally {
+      clearTimeout(fetchTimeout);
+      abortRef.current = null;
+      cancelRejectRef.current = null;
       isSubmittingRef.current = false;
     }
   }
@@ -269,7 +330,7 @@ export function TaskSnapApp() {
             />
           ) : null}
 
-          {phase === "processing" ? <ProcessingState /> : null}
+          {phase === "processing" ? <ProcessingState onCancel={handleCancel} /> : null}
         </div>
 
         <div ref={resultsRef} className="mt-6 scroll-mt-28 px-4 sm:px-6">

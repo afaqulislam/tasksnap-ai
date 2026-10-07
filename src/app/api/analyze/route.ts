@@ -149,7 +149,12 @@ export async function POST(request: Request) {
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ApiError) {
-      if (error.status >= 500 && !demo) refundRateLimit(ip);
+      // Only provider pressure/transient failures give the slot back (429s
+      // and 5xx). Permanent 4xx — bad key, truncated response — are not
+      // fixed by retrying the same payload, so the slot stays spent.
+      if ((error.status === 429 || error.status >= 500) && !demo) {
+        refundRateLimit(ip);
+      }
       return errorResponse(error.message, error.status);
     }
     console.error("Analyze failed:", error);
