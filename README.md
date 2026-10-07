@@ -91,7 +91,7 @@ The interesting part of this project isn't the extraction — it's everything th
 | OCR | [Tesseract.js](https://github.com/naptha/tesseract.js) — runs in the browser, zero API tokens |
 | AI — fallback | <img src="https://cdn.simpleicons.org/googlegemini/8E75B2" height="14" alt="Google Gemini" /> Google Gemini — used automatically when Groq is missing or errors |
 | Demo fallback | Built-in sample results when `DEMO_MODE=true` and no AI key is set |
-| Testing | Vitest — deadline parsing, response validation, urgency ranking, rate limiting, OCR sanity gate |
+| Testing | Vitest — deadline parsing, response validation, urgency ranking, rate limiting, OCR sanity gate, AI provider edge cases |
 | Quality | GitHub Actions CI — ESLint, `tsc --noEmit`, Vitest, and `next build` on every push |
 
 ### Code distribution
@@ -181,7 +181,7 @@ src/
     ├── rate-limit.ts         # Sliding-window per-IP limiter
     ├── validate.ts           # Task response parsing & sanitising
     ├── types.ts              # Shared types
-    └── *.test.ts             # Unit tests for deadline, validate, priority, rate-limit, OCR sanity
+    └── *.test.ts             # Unit tests for deadline, validate, priority, rate-limit, OCR sanity, AI provider edge cases
 ```
 
 ## 🧪 API Reference
@@ -214,6 +214,7 @@ curl -X POST https://<your-domain>/api/analyze \
 | `422` | The provider's reply was cut short and held no usable tasks (screenshot too dense for one pass). |
 | `429` | Per-IP limit reached (`Retry-After` header included) or the AI provider is rate-limited. |
 | `500` | Provider failure or timeout after all fallbacks were attempted. |
+| `502` | The AI returned an empty response (fallbacks were attempted if configured). |
 | `503` | No AI provider key is configured and `DEMO_MODE` is off. |
 
 **Response:**
